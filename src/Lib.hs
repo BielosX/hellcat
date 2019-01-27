@@ -4,6 +4,7 @@ module Lib
 
 import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Functions
+import Graphics.GL.Groups
 import Graphics.GL.Types
 import Graphics.GL.Tokens
 import Foreign.Marshal.Alloc
@@ -49,20 +50,29 @@ assignVertexBufferToVAO idx (VertexBuffer vb len) (VertexArrayObject vao) = do
     glBindBuffer GL_ARRAY_BUFFER vb
     glVertexAttribPointer index (fromIntegral len :: GLint) GL_FLOAT 0 0 nullPtr
 
-render :: GLFW.Window -> VertexArrayObject -> IO ()
-render window vao = do
+render :: GLFW.Window -> [VertexArrayObject] -> Int -> IO ()
+render window vao i = do
     close <- GLFW.windowShouldClose window
     if close then do
         GLFW.destroyWindow window
         GLFW.terminate
         return ()
     else do
-        setCurrentVAO vao
+        glClear GL_COLOR_BUFFER_BIT
+        GLFW.pollEvents
+        k0 <- GLFW.getKey window GLFW.Key'A
+        k1 <- GLFW.getKey window GLFW.Key'S
+        setCurrentVAO (vao !! i)
         glDrawArrays GL_TRIANGLES 0 3
         GLFW.swapBuffers window
-        render window vao
+        case k0 of
+            GLFW.KeyState'Pressed -> render window vao 0
+            _ -> case k1 of
+                    GLFW.KeyState'Pressed -> render window vao 1
+                    _ -> render window vao i
 
 triangle = [Vertex3 0 0 0, Vertex3 0 1 0, Vertex3 1 0 0]
+triangle2 = [Vertex3 0 0 0, Vertex3 1 1 0, Vertex3 1 0 0]
 
 someFunc :: IO ()
 someFunc = do
@@ -75,10 +85,14 @@ someFunc = do
         case w of
             (Just window) -> do
                 GLFW.makeContextCurrent (Just window)
+                GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
                 vao <- newVAO
                 vb <- newVertexBuffer triangle
                 assignVertexBufferToVAO 0 vb vao
-                render window vao
+                vao2 <- newVAO
+                vb2 <- newVertexBuffer triangle2
+                assignVertexBufferToVAO 0 vb2 vao2
+                render window [vao, vao2] 0
             Nothing -> do
                 putStrLn "Unable to create window"
                 GLFW.terminate
