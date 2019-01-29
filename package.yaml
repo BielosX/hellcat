@@ -25,6 +25,7 @@ dependencies:
 - OpenGLRaw
 - array
 - split
+- text
 
 library:
   source-dirs: src

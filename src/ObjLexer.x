@@ -11,6 +11,7 @@ $digit = [0-9]
 tokens :-
     "s".* ;
     "mtllib".* ;
+    "usemtl".* ;
     "o".* ;
     "#".*   ;
     $white+ ;
@@ -18,7 +19,7 @@ tokens :-
     vn                      { \s -> NormVect }
     v                       { \s -> Vertex }
     f                       { \s -> Face }
-    $digit+\.$digit+        { \s -> FloatValue (read s :: Float) }
+    "-"?$digit+\.$digit+        { \s -> FloatValue (read s :: Float) }
     ($digit+ | $digit+\/$digit+ | $digit+\/$digit+\/$digit+ | $digit+\/\/$digit+) { FaceIdx }
 {
 
