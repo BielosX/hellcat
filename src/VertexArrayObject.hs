@@ -45,7 +45,7 @@ loadModel (Model v i) = do
     let vLen = (fromIntegral :: Int -> GLsizei) $ length v
     if iLength > 0 then do
         (IndexBuffer idxBuff) <- newIndexBuffer $ fmap convIdx i
-        let count = (fromIntegral :: Int -> GLsizei) iLength
+        let count = (fromIntegral :: Int -> GLsizei) iLength * 3
         return $ vao {indicesCount = count, idxBuffer = idxBuff, verticesCount = vLen}
     else return $ vao { verticesCount = vLen }
 
