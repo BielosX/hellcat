@@ -13,42 +13,8 @@ import Foreign.Marshal.Array
 import Foreign.Ptr
 import Control.Monad
 
-data VertexArrayObject = VertexArrayObject GLuint
-
-data VertexBuffer = VertexBuffer GLuint Int
-
-data Vertex3 = Vertex3 GLfloat GLfloat GLfloat
-
-type AttrIndex = Int
-
-newVAO :: IO VertexArrayObject
-newVAO = alloca $ \ptr -> do
-            glGenVertexArrays 1 ptr
-            id <- peek ptr
-            return $ VertexArrayObject id
-
-setCurrentVAO :: VertexArrayObject -> IO ()
-setCurrentVAO (VertexArrayObject id) = glBindVertexArray id
-
-newVertexBuffer :: [Vertex3] -> IO VertexBuffer
-newVertexBuffer v = alloca $ \ptr -> do
-            glGenBuffers 1 ptr
-            id <- peek ptr
-            glBindBuffer GL_ARRAY_BUFFER id
-            let vertices = join $ fmap (\(Vertex3 x y z) -> [x,y,z]) v
-            let float = 0 :: GLfloat
-            let size = (length vertices) * (sizeOf float)
-            withArray vertices $ \arrayPtr -> do
-                glBufferData GL_ARRAY_BUFFER (fromIntegral size :: GLsizeiptr) arrayPtr GL_STATIC_DRAW
-            return $ VertexBuffer id (length v)
-
-assignVertexBufferToVAO :: AttrIndex -> VertexBuffer -> VertexArrayObject -> IO ()
-assignVertexBufferToVAO idx (VertexBuffer vb len) (VertexArrayObject vao) = do
-    glBindVertexArray vao
-    let index = (fromIntegral idx :: GLuint)
-    glEnableVertexAttribArray index
-    glBindBuffer GL_ARRAY_BUFFER vb
-    glVertexAttribPointer index (fromIntegral len :: GLint) GL_FLOAT 0 0 nullPtr
+import VertexArrayObject
+import Model
 
 render :: GLFW.Window -> [VertexArrayObject] -> Int -> IO ()
 render window vao i = do
@@ -62,8 +28,7 @@ render window vao i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        setCurrentVAO (vao !! i)
-        glDrawArrays GL_TRIANGLES 0 3
+        drawVAO (vao !! i)
         GLFW.swapBuffers window
         case k0 of
             GLFW.KeyState'Pressed -> render window vao 0
@@ -71,8 +36,10 @@ render window vao i = do
                     GLFW.KeyState'Pressed -> render window vao 1
                     _ -> render window vao i
 
-triangle = [Vertex3 0 0 0, Vertex3 0 1 0, Vertex3 1 0 0]
-triangle2 = [Vertex3 0 0 0, Vertex3 1 1 0, Vertex3 1 0 0]
+triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
+triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
+
+idxs = [TriangleIndex 0 1 2]
 
 someFunc :: IO ()
 someFunc = do
@@ -86,13 +53,9 @@ someFunc = do
             (Just window) -> do
                 GLFW.makeContextCurrent (Just window)
                 GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
-                vao <- newVAO
-                vb <- newVertexBuffer triangle
-                assignVertexBufferToVAO 0 vb vao
-                vao2 <- newVAO
-                vb2 <- newVertexBuffer triangle2
-                assignVertexBufferToVAO 0 vb2 vao2
-                render window [vao, vao2] 0
+                m1 <- loadModel $ Model triangle1v idxs
+                m2 <- loadModel $ Model triangle2v idxs
+                render window [m1, m2] 0
             Nothing -> do
                 putStrLn "Unable to create window"
                 GLFW.terminate
