@@ -27,6 +27,8 @@ dependencies:
 - split
 - text
 - mtl
+- containers
+- strict
 
 library:
   source-dirs: src

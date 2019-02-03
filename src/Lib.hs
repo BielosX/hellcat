@@ -12,9 +12,11 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 import Foreign.Ptr
 import Control.Monad
+import Control.Monad.Except
 
 import VertexArrayObject
 import Model
+import Shader
 
 render :: GLFW.Window -> [VertexArrayObject] -> Int -> IO ()
 render window vao i = do

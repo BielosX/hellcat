@@ -1,5 +1,6 @@
 module Shader(
-                loadShader
+                loadShader,
+                ShaderType(..)
             ) where
 
 import System.IO
@@ -7,8 +8,7 @@ import Graphics.GL.Functions
 import Graphics.GL.Groups
 import Graphics.GL.Types
 import Graphics.GL.Tokens
-import Data.Text.Lazy.IO as I
-import Data.Text.Lazy as Text
+import System.IO.Strict as S
 import Foreign.Ptr
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
@@ -17,27 +17,42 @@ import qualified Data.List as L
 import Data.Char
 import Control.Monad.Except
 import Data.Either
+import qualified Data.Map.Strict as Map
 
-data ShaderType = VertexShader | FragmentShader
+data ShaderType = VertexShader | FragmentShader deriving (Show,Eq)
 
 data CompileStatus = Success | Fail
 
-newtype Shader = Shader GLuint
+newtype Shader = Shader GLuint deriving (Show, Eq)
 
 convType :: ShaderType -> GLenum
 convType VertexShader = GL_VERTEX_SHADER
 convType FragmentShader = GL_FRAGMENT_SHADER
 
+glIntToShaderType = Map.fromList [(GL_VERTEX_SHADER, VertexShader), (GL_FRAGMENT_SHADER, FragmentShader)]
+
 toGLcharList :: String -> [GLchar]
 toGLcharList = fmap (\c -> (fromIntegral :: Int -> GLchar) $ ord c)
 
+getParameter :: GLuint -> GLenum -> IO GLint
+getParameter id q = alloca $ \ptr -> do
+    glGetShaderiv id q ptr
+    peek ptr
+
+getShaderType :: GLuint -> IO ShaderType
+getShaderType id = do
+    value <- getParameter id GL_SHADER_TYPE
+    return $ glIntToShaderType Map.! ((fromIntegral :: GLint -> GLenum) value)
+
 getCompileStatus :: GLuint -> IO CompileStatus
-getCompileStatus id = alloca $ \ptr -> do
-    glGetShaderiv id GL_COMPILE_STATUS ptr
-    value <- peek ptr
+getCompileStatus id = do
+    value <- getParameter id GL_COMPILE_STATUS
     if value == 0 then
         return Fail
     else return Success
+
+getSourceLen :: GLuint -> IO GLint
+getSourceLen id = getParameter id GL_SHADER_SOURCE_LENGTH
 
 getLogLen :: GLuint -> IO GLint
 getLogLen id = alloca $ \ptr -> do
@@ -73,10 +88,10 @@ loadShader t p = do
 
 _loadShader :: ShaderType -> FilePath -> IO (Either String Shader)
 _loadShader t p = do
-    text <- fmap Text.unpack $ I.readFile p
+    text <- S.readFile p
     shaderId <- glCreateShader $ convType t
     lenPtr <- malloc :: IO (Ptr GLint)
-    poke lenPtr $ (fromIntegral :: Int -> GLint) $ L.length text
+    poke lenPtr $ (fromIntegral :: Int -> GLint) $ length text
     withArray (toGLcharList text) $ \arrPtr -> do
         pp <- malloc :: IO (Ptr (Ptr GLchar))
         poke pp arrPtr
