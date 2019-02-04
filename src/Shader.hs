@@ -18,6 +18,8 @@ import Data.Char
 import Control.Monad.Except
 import Data.Either
 import qualified Data.Map.Strict as Map
+import Linear.V4
+import Linear.Matrix
 
 data ShaderType = VertexShader | FragmentShader deriving (Show,Eq)
 
@@ -106,3 +108,12 @@ _loadShader t p = do
             log <- getLog shaderId
             glDeleteShader shaderId
             return $ Left log
+
+_vectorToList :: V4 a -> [a]
+_vectorToList (V4 x y z w) = [x,y,z,w]
+
+uniformMatrix :: GLint -> M44 Float -> IO ()
+uniformMatrix location matrix = do
+    let arr = _vectorToList matrix >>= _vectorToList
+    withArray arr $ glUniformMatrix4fv location 1 GL_TRUE
+
