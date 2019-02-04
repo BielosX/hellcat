@@ -1,6 +1,7 @@
 module Shader(
                 loadShader,
-                ShaderType(..)
+                ShaderType(..),
+                createProgram
             ) where
 
 import System.IO
@@ -23,9 +24,11 @@ import Linear.Matrix
 
 data ShaderType = VertexShader | FragmentShader deriving (Show,Eq)
 
-data CompileStatus = Success | Fail
+data Status = Success | Fail
 
 newtype Shader = Shader GLuint deriving (Show, Eq)
+
+newtype Program = Program GLuint deriving (Show, Eq)
 
 convType :: ShaderType -> GLenum
 convType VertexShader = GL_VERTEX_SHADER
@@ -46,7 +49,7 @@ getShaderType id = do
     value <- getParameter id GL_SHADER_TYPE
     return $ glIntToShaderType Map.! ((fromIntegral :: GLint -> GLenum) value)
 
-getCompileStatus :: GLuint -> IO CompileStatus
+getCompileStatus :: GLuint -> IO Status
 getCompileStatus id = do
     value <- getParameter id GL_COMPILE_STATUS
     if value == 0 then
@@ -117,3 +120,24 @@ uniformMatrix location matrix = do
     let arr = _vectorToList matrix >>= _vectorToList
     withArray arr $ glUniformMatrix4fv location 1 GL_TRUE
 
+getLinkStatus :: GLuint -> IO Status
+getLinkStatus id = alloca $ \ptr -> do
+    glGetProgramiv id GL_LINK_STATUS ptr
+    value <- peek ptr
+    if value == 0 then return Fail
+    else return Success
+
+createProgram :: [Shader] -> ExceptT String IO Program
+createProgram shaders = do
+    r <- lift $ _createProgram shaders
+    liftEither r
+
+_createProgram :: [Shader] -> IO (Either String Program)
+_createProgram shaders = do
+    prog <- glCreateProgram
+    mapM (\(Shader s) -> glAttachShader prog s) shaders
+    glLinkProgram prog
+    status <- getLinkStatus prog
+    case status of
+        Fail -> return $ Left "Unable to link program"
+        Success -> return $ Right $ Program prog
