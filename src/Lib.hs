@@ -14,12 +14,12 @@ import Foreign.Ptr
 import Control.Monad
 import Control.Monad.Except
 
-import VertexArrayObject
+import BufferedObject
 import Model
 import Shader
 
-render :: GLFW.Window -> [VertexArrayObject] -> Int -> IO ()
-render window vao i = do
+render :: GLFW.Window -> [BufferedObject] -> Int -> IO ()
+render window bo i = do
     close <- GLFW.windowShouldClose window
     if close then do
         GLFW.destroyWindow window
@@ -30,13 +30,13 @@ render window vao i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        drawVAO (vao !! i)
+        drawObject (bo !! i)
         GLFW.swapBuffers window
         case k0 of
-            GLFW.KeyState'Pressed -> render window vao 0
+            GLFW.KeyState'Pressed -> render window bo 0
             _ -> case k1 of
-                    GLFW.KeyState'Pressed -> render window vao 1
-                    _ -> render window vao i
+                    GLFW.KeyState'Pressed -> render window bo 1
+                    _ -> render window bo i
 
 triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
 triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]

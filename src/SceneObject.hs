@@ -1,9 +1,11 @@
 module SceneObject where
 
 import Linear.Matrix
-import VertexArrayObject
+import BufferedObject
+import Shader
 
 data SceneObject = SceneObject {
-    vao :: VertexArrayObject,
-    localMatrix :: M44 Float
+    object :: BufferedObject,
+    localMatrix :: M44 Float,
+    program :: Program
 }
