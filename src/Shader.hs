@@ -1,7 +1,9 @@
 module Shader(
                 loadShader,
                 ShaderType(..),
-                createProgram
+                createProgram,
+                useProgram,
+                Program(..)
             ) where
 
 import System.IO
@@ -126,6 +128,9 @@ getLinkStatus id = alloca $ \ptr -> do
     value <- peek ptr
     if value == 0 then return Fail
     else return Success
+
+useProgram :: Program -> IO ()
+useProgram (Program p) = glUseProgram p
 
 createProgram :: [Shader] -> ExceptT String IO Program
 createProgram shaders = do
