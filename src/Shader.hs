@@ -3,7 +3,9 @@ module Shader(
                 ShaderType(..),
                 createProgram,
                 useProgram,
-                Program(..)
+                Program(..),
+                getUniformLocation,
+                uniformMatrix
             ) where
 
 import System.IO

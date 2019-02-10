@@ -47,8 +47,9 @@ triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
 idxs = [TriangleIndex 0 1 2]
 
 shader = do
-    s <- loadShader FragmentShader "shader.frag"
-    p <- createProgram [s]
+    v <- loadShader VertexShader "shader.vert"
+    f <- loadShader FragmentShader "shader.frag"
+    p <- createProgram [v, f]
     return p
 
 initGLFW :: ExceptT String IO ()

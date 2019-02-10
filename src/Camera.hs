@@ -3,7 +3,7 @@ module Camera where
 import Linear.Matrix
 
 data Camera = Camera {
-    perspective :: M44 Float,
+    projection :: M44 Float,
     word :: M44 Float
 }
 
