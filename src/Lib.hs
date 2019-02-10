@@ -50,28 +50,30 @@ shader = do
     p <- createProgram [s]
     return p
 
-someFunc :: IO ()
+initGLFW :: ExceptT String IO ()
+initGLFW = do
+    r <- liftIO $ GLFW.init
+    if not r then throwError "Unable to initialize GLFW"
+    else return ()
+
+creteWindow :: Int -> Int -> String -> ExceptT String IO GLFW.Window
+creteWindow w h n = do
+    w <- liftIO $ GLFW.createWindow w h n Nothing Nothing
+    case w of
+        (Just window) -> return window
+        Nothing -> do
+             liftIO $ GLFW.terminate
+             throwError "Unable to create window"
+
+someFunc :: ExceptT String IO ()
 someFunc = do
-    r <- GLFW.init
-    if not r then do
-        putStrLn "Unable to initialize GLFW"
-        return ()
-    else do
-        w <- GLFW.createWindow 800 600 "Test" Nothing Nothing
-        case w of
-            (Just window) -> do
-                GLFW.makeContextCurrent (Just window)
-                GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
-                prog <- runExceptT $ shader
-                case prog of
-                    (Left e) -> putStrLn e
-                    (Right p) -> return ()
-                let program = fromRight (Program 0) prog
-                m1 <- loadModel $ Model triangle1v idxs
-                m2 <- loadModel $ Model triangle2v idxs
-                let so1 = newSceneObject m1 program
-                let so2 = newSceneObject m2 program
-                render window [so1, so2] 0
-            Nothing -> do
-                putStrLn "Unable to create window"
-                GLFW.terminate
+    initGLFW
+    window <- creteWindow 800 600 "Test"
+    liftIO $ GLFW.makeContextCurrent (Just window)
+    liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
+    prog <- shader
+    m1 <- liftIO $ loadModel $ Model triangle1v idxs
+    m2 <- liftIO $ loadModel $ Model triangle2v idxs
+    let so1 = newSceneObject m1 prog
+    let so2 = newSceneObject m2 prog
+    liftIO $ render window [so1, so2] 0
