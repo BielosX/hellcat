@@ -80,6 +80,20 @@ glCharArrayToString ptr n = do
         return $ c : next
     else glCharArrayToString ptr 0
 
+charToGLChar = (fromIntegral :: Int -> GLchar) . ord
+
+copyStr :: String -> Ptr GLchar -> IO ()
+copyStr [] ptr = poke ptr $ charToGLChar '\0'
+copyStr (x:xs) ptr = do
+    poke ptr $ charToGLChar x
+    copyStr xs (plusPtr ptr 1)
+
+withString :: String -> (Ptr GLchar -> IO a) -> IO a
+withString str f = allocaBytes (size + 1) $ \ptr -> do
+    copyStr str ptr
+    f ptr
+    where size = length str
+
 getLog :: GLuint -> IO String
 getLog id = do
     len <- getLogLen id
@@ -121,6 +135,12 @@ uniformMatrix :: GLint -> M44 Float -> IO ()
 uniformMatrix location matrix = do
     let arr = _vectorToList matrix >>= _vectorToList
     withArray arr $ glUniformMatrix4fv location 1 GL_TRUE
+
+getUniformLocation :: Program -> String -> IO (Maybe GLint)
+getUniformLocation (Program p) varName = withString varName $ \ptr -> do
+    location <- glGetUniformLocation p ptr
+    if location == (-1) then return Nothing
+    else return $ Just location
 
 getLinkStatus :: GLuint -> IO Status
 getLinkStatus id = alloca $ \ptr -> do

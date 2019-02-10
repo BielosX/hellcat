@@ -19,6 +19,7 @@ import BufferedObject
 import Model
 import Shader
 import SceneObject
+import Camera
 
 render :: GLFW.Window -> [SceneObject] -> Int -> IO ()
 render window bo i = do
@@ -32,7 +33,7 @@ render window bo i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        drawSceneObject (bo !! i)
+        drawSceneObject (bo !! i) identityCam
         GLFW.swapBuffers window
         case k0 of
             GLFW.KeyState'Pressed -> render window bo 0
@@ -46,7 +47,7 @@ triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
 idxs = [TriangleIndex 0 1 2]
 
 shader = do
-    s <- loadShader FragmentShader "frag.glsl"
+    s <- loadShader FragmentShader "shader.frag"
     p <- createProgram [s]
     return p
 
