@@ -14,6 +14,7 @@ import Foreign.Ptr
 import Control.Monad
 import Control.Monad.Except
 import Data.Either
+import Linear.V3
 
 import BufferedObject
 import Model
@@ -33,7 +34,8 @@ render window bo i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        drawSceneObject (bo !! i) identityCam
+        let cam = perspectiveCam (pi/4.0) (800.0/600.0) 0.1 100.0
+        drawSceneObject (bo !! i) $ camLookAt cam (V3 4.0 3.0 3.0) (V3 0 0 0) (V3 0 1.0 0)
         GLFW.swapBuffers window
         case k0 of
             GLFW.KeyState'Pressed -> render window bo 0
