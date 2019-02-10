@@ -1,7 +1,7 @@
-#version 330 core
+#version 130
 
-out color;
+out vec3 color;
 
 void main() {
-    col = vec3(1,0,0);
+    color = vec3(1,0,0);
 }

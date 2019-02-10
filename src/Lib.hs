@@ -13,12 +13,14 @@ import Foreign.Marshal.Array
 import Foreign.Ptr
 import Control.Monad
 import Control.Monad.Except
+import Data.Either
 
 import BufferedObject
 import Model
 import Shader
+import SceneObject
 
-render :: GLFW.Window -> [BufferedObject] -> Int -> IO ()
+render :: GLFW.Window -> [SceneObject] -> Int -> IO ()
 render window bo i = do
     close <- GLFW.windowShouldClose window
     if close then do
@@ -30,7 +32,7 @@ render window bo i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        drawObject (bo !! i)
+        drawSceneObject (bo !! i)
         GLFW.swapBuffers window
         case k0 of
             GLFW.KeyState'Pressed -> render window bo 0
@@ -42,6 +44,11 @@ triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
 triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
 
 idxs = [TriangleIndex 0 1 2]
+
+shader = do
+    s <- loadShader FragmentShader "frag.glsl"
+    p <- createProgram [s]
+    return p
 
 someFunc :: IO ()
 someFunc = do
@@ -55,9 +62,16 @@ someFunc = do
             (Just window) -> do
                 GLFW.makeContextCurrent (Just window)
                 GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
+                prog <- runExceptT $ shader
+                case prog of
+                    (Left e) -> putStrLn e
+                    (Right p) -> return ()
+                let program = fromRight (Program 0) prog
                 m1 <- loadModel $ Model triangle1v idxs
                 m2 <- loadModel $ Model triangle2v idxs
-                render window [m1, m2] 0
+                let so1 = newSceneObject m1 program
+                let so2 = newSceneObject m2 program
+                render window [so1, so2] 0
             Nothing -> do
                 putStrLn "Unable to create window"
                 GLFW.terminate
