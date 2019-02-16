@@ -2,6 +2,7 @@ module Camera where
 
 import Linear.Matrix
 import Linear.Projection
+import Linear.V3
 
 data Camera = Camera {
     projection :: M44 Float,

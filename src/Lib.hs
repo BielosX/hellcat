@@ -15,15 +15,17 @@ import Control.Monad
 import Control.Monad.Except
 import Data.Either
 import Linear.V3
+import Linear.Matrix
 
 import BufferedObject
 import Model
 import Shader
 import SceneObject
 import Camera
+import Scene
 
-render :: GLFW.Window -> [SceneObject] -> Int -> IO ()
-render window bo i = do
+render :: GLFW.Window -> Scene -> IO ()
+render window s = do
     close <- GLFW.windowShouldClose window
     if close then do
         GLFW.destroyWindow window
@@ -34,14 +36,9 @@ render window bo i = do
         GLFW.pollEvents
         k0 <- GLFW.getKey window GLFW.Key'A
         k1 <- GLFW.getKey window GLFW.Key'S
-        let cam = perspectiveCam (pi/4.0) (800.0/600.0) 0.1 100.0
-        drawSceneObject (bo !! i) $ camLookAt cam (V3 4.0 3.0 3.0) (V3 0 0 0) (V3 0 1.0 0)
+        drawScene s
         GLFW.swapBuffers window
-        case k0 of
-            GLFW.KeyState'Pressed -> render window bo 0
-            _ -> case k1 of
-                    GLFW.KeyState'Pressed -> render window bo 1
-                    _ -> render window bo i
+        render window s
 
 triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
 triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
@@ -80,4 +77,7 @@ someFunc = do
     m2 <- liftIO $ loadModel $ Model triangle2v idxs
     let so1 = newSceneObject m1 prog
     let so2 = newSceneObject m2 prog
-    liftIO $ render window [so1, so2] 0
+    let proj = perspectiveCam (pi/4.0) (800.0/600.0) 0.1 100.0
+    let cam = camLookAt proj (V3 4.0 3.0 3.0) (V3 0 0 0) (V3 0 1.0 0)
+    s <- liftEither $ scene [so1, so2] [cam]
+    liftIO $ render window s
