@@ -14,3 +14,7 @@ identityCam = Camera identity identity
 perspectiveCam fov ratio near far = Camera (perspective fov ratio near far) identity
 
 camLookAt (Camera p w) eye center up = Camera p $ lookAt eye center up
+
+transformCam :: Camera -> M44 Float -> Camera
+transformCam c m = c { word = newWord }
+    where newWord = m !*! (word c)

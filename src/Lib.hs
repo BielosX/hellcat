@@ -23,6 +23,9 @@ import Shader
 import SceneObject
 import Camera
 import Scene
+import ObjFile
+
+moveMat = mkTransformationMat identity
 
 render :: GLFW.Window -> Scene -> IO ()
 render window s = do
@@ -34,11 +37,16 @@ render window s = do
     else do
         glClear GL_COLOR_BUFFER_BIT
         GLFW.pollEvents
-        k0 <- GLFW.getKey window GLFW.Key'A
+        k0 <- GLFW.getKey window GLFW.Key'W
         k1 <- GLFW.getKey window GLFW.Key'S
-        drawScene s
+        let newS = case k0 of
+                GLFW.KeyState'Pressed -> transformCurrentCam s (moveMat $ V3 0 0 0.1)
+                _ -> case k1 of
+                        GLFW.KeyState'Pressed -> transformCurrentCam s (moveMat $ V3 0 0 (-0.1))
+                        _ -> s
+        drawScene newS
         GLFW.swapBuffers window
-        render window s
+        render window newS
 
 triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
 triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
@@ -73,11 +81,13 @@ someFunc = do
     liftIO $ GLFW.makeContextCurrent (Just window)
     liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
     prog <- shader
+    objFile <- liftIO $ readObjFile "monkey.obj"
     m1 <- liftIO $ loadModel $ Model triangle1v idxs
     m2 <- liftIO $ loadModel $ Model triangle2v idxs
+    m3 <- liftIO $ loadModel objFile
     let so1 = newSceneObject m1 prog
     let so2 = newSceneObject m2 prog
+    let so3 = newSceneObject m3 prog
     let proj = perspectiveCam (pi/4.0) (800.0/600.0) 0.1 100.0
-    let cam = camLookAt proj (V3 4.0 3.0 3.0) (V3 0 0 0) (V3 0 1.0 0)
-    s <- liftEither $ scene [so1, so2] [cam]
+    s <- liftEither $ scene [so3] [proj]
     liftIO $ render window s
