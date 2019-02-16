@@ -30,6 +30,8 @@ dependencies:
 - containers
 - strict
 - linear
+- aeson
+- yaml
 
 library:
   source-dirs: src
