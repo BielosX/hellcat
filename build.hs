@@ -33,3 +33,8 @@ main = do
     checkShaders shaders
     setCurrentDirectory ".."
     mapM_ (\src -> copyFile src ("target/" ++ (takeFileName src))) shaders
+    res <- listDirectory "resources"
+    setCurrentDirectory "resources"
+    resources <- mapM makeAbsolute res
+    setCurrentDirectory ".."
+    mapM_ (\src -> copyFile src ("target/" ++ (takeFileName src))) resources

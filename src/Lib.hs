@@ -24,6 +24,7 @@ import SceneObject
 import Camera
 import Scene
 import ObjFile
+import Config
 
 moveMat = mkTransformationMat identity
 
@@ -74,10 +75,19 @@ creteWindow w h n = do
              liftIO $ GLFW.terminate
              throwError "Unable to create window"
 
+ratio :: Resolution -> Float
+ratio (Resolution width height) = w / h
+    where w = fromIntegral width :: Float
+          h = fromIntegral height :: Float
+
 someFunc :: ExceptT String IO ()
 someFunc = do
+    config <- readConfigFile "config.yaml"
+    let res = resolution config
+    let w = width res
+    let h = height res
     initGLFW
-    window <- creteWindow 800 600 "Test"
+    window <- creteWindow w h "Test"
     liftIO $ GLFW.makeContextCurrent (Just window)
     liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
     prog <- shader
@@ -88,6 +98,6 @@ someFunc = do
     let so1 = newSceneObject m1 prog
     let so2 = newSceneObject m2 prog
     let so3 = newSceneObject m3 prog
-    let proj = perspectiveCam (pi/4.0) (800.0/600.0) 0.1 100.0
+    let proj = perspectiveCam (pi/4.0) (ratio res) 0.1 100.0
     s <- liftEither $ scene [so3] [proj]
     liftIO $ render window s

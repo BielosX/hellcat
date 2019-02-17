@@ -32,6 +32,8 @@ dependencies:
 - linear
 - aeson
 - yaml
+- bytestring
+- filepath
 
 library:
   source-dirs: src
