@@ -5,7 +5,8 @@ module Shader(
                 useProgram,
                 Program(..),
                 getUniformLocation,
-                uniformMatrix
+                uniformMatrix,
+                Shader(..)
             ) where
 
 import System.IO

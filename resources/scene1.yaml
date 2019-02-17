@@ -1,0 +1,23 @@
+cameras:
+    - camPosition:
+        xp: 0
+        yp: 0
+        zp: 0
+      camRotation:
+        xr: 0
+        yr: 0
+        zr: 0
+objects:
+    - position:
+        xp: 0
+        yp: 0
+        zp: 0
+      rotation:
+        xr: 0
+        yr: 0
+        zr: 0
+      modelFile:
+        file: "monkey.obj"
+      shaders:
+          - "shader.vert"
+          - "shader.frag"

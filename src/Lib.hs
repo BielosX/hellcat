@@ -25,6 +25,7 @@ import Camera
 import Scene
 import ObjFile
 import Config
+import SceneDescription
 
 moveMat = mkTransformationMat identity
 
@@ -48,17 +49,6 @@ render window s = do
         drawScene newS
         GLFW.swapBuffers window
         render window newS
-
-triangle1v = [Model.Vertex3 0 0 0, Model.Vertex3 0 1 0, Model.Vertex3 1 0 0]
-triangle2v = [Model.Vertex3 0 0 0, Model.Vertex3 1 1 0, Model.Vertex3 1 0 0]
-
-idxs = [TriangleIndex 0 1 2]
-
-shader = do
-    v <- loadShader VertexShader "shader.vert"
-    f <- loadShader FragmentShader "shader.frag"
-    p <- createProgram [v, f]
-    return p
 
 initGLFW :: ExceptT String IO ()
 initGLFW = do
@@ -90,14 +80,5 @@ someFunc = do
     window <- creteWindow w h "Test"
     liftIO $ GLFW.makeContextCurrent (Just window)
     liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
-    prog <- shader
-    objFile <- liftIO $ readObjFile "monkey.obj"
-    m1 <- liftIO $ loadModel $ Model triangle1v idxs
-    m2 <- liftIO $ loadModel $ Model triangle2v idxs
-    m3 <- liftIO $ loadModel objFile
-    let so1 = newSceneObject m1 prog
-    let so2 = newSceneObject m2 prog
-    let so3 = newSceneObject m3 prog
-    let proj = perspectiveCam (pi/4.0) (ratio res) 0.1 100.0
-    s <- liftEither $ scene [so3] [proj]
+    s <- loadScene "scene1.yaml" res
     liftIO $ render window s
