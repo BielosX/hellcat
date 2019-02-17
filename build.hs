@@ -17,24 +17,34 @@ callCmd cmd args = _callCmd cmd args snd
 stackBuild = callCmd "stack" ["build"]
 stackInstall t = callCmd "stack" ["install", "--local-bin-path", t]
 
-checkShaders :: [FilePath] -> IO ()
-checkShaders = mapM_ glslangValidator
+_checkShaders :: [FilePath] -> IO ()
+_checkShaders = mapM_ glslangValidator
+
+listAbs :: FilePath -> IO [FilePath]
+listAbs path = do
+    files <- listDirectory path
+    setCurrentDirectory path
+    r <- mapM makeAbsolute files
+    setCurrentDirectory ".."
+    return r
+
+checkShaders :: IO ()
+checkShaders = do
+    shaders <- listAbs "shaders"
+    _checkShaders shaders
 
 glslangValidator f = _callCmd "glslangValidator" [f] fst
+
+copyAll :: FilePath -> FilePath -> IO ()
+copyAll from to = do
+    absContent <- listAbs from
+    mapM_ (\src -> copyFile src ((to ++ "/") ++ (takeFileName src))) absContent
 
 main :: IO ()
 main = do
     stackBuild
     createDirectoryIfMissing False "target"
     stackInstall "target"
-    files <- listDirectory "shaders"
-    setCurrentDirectory "shaders"
-    shaders <- mapM makeAbsolute files
-    checkShaders shaders
-    setCurrentDirectory ".."
-    mapM_ (\src -> copyFile src ("target/" ++ (takeFileName src))) shaders
-    res <- listDirectory "resources"
-    setCurrentDirectory "resources"
-    resources <- mapM makeAbsolute res
-    setCurrentDirectory ".."
-    mapM_ (\src -> copyFile src ("target/" ++ (takeFileName src))) resources
+    checkShaders
+    copyAll "shaders" "target"
+    copyAll "resources" "target"
