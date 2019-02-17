@@ -80,5 +80,5 @@ someFunc = do
     window <- creteWindow w h "Test"
     liftIO $ GLFW.makeContextCurrent (Just window)
     liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
-    s <- loadScene "scene1.yaml" res
+    s <- loadScene "scene1.yaml" (toCamera res)
     liftIO $ render window s

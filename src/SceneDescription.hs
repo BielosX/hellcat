@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module SceneDescription(loadScene) where
+module SceneDescription(loadScene, toCamera) where
 
 import GHC.Generics
 import System.FilePath.Posix
@@ -157,11 +157,11 @@ getSceneDescription path = do
                 return s
         _ -> throwError "file type not supported"
 
-loadScene :: FilePath -> Resolution -> ExceptT String IO Scene
-loadScene path res = do
+loadScene :: FilePath -> (CameraDescription -> Camera) -> ExceptT String IO Scene
+loadScene path f= do
     description <- getSceneDescription path
     sceneObjects <- loadSceneObjects (objects description)
-    let cam = fmap (toCamera res) (cameras description)
+    let cam = fmap f (cameras description)
     result <- liftEither $ scene sceneObjects cam
     return result
 
