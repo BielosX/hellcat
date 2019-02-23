@@ -1,5 +1,6 @@
 module Scene(scene, Scene, drawScene, transformCurrentCam) where
 
+import Graphics.GL.Types
 import Data.List
 import Linear.Matrix
 
@@ -29,6 +30,10 @@ scene :: [SceneObject] -> [Camera] -> Either String Scene
 scene [] _ = Left "empty scene not allowed"
 scene _ [] = Left "scene without camera not allowed"
 scene o c = Right $ Scene o c 0
+
+loadMatrix :: Maybe GLint -> M44 Float -> IO ()
+loadMatrix Nothing _ = putStrLn "WARNING: uniform value is not defined"
+loadMatrix (Just location) m = uniformMatrix location m
 
 drawSceneObject :: SceneObject -> Camera -> IO ()
 drawSceneObject obj activeCamera = do

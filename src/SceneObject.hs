@@ -18,7 +18,3 @@ data SceneObject = SceneObject {
 
 newSceneObject o p = SceneObject o identity p
 
-loadMatrix :: Maybe GLint -> M44 Float -> IO ()
-loadMatrix Nothing _ = putStrLn "WARNING: uniform value is not defined"
-loadMatrix (Just location) m = uniformMatrix location m
-
