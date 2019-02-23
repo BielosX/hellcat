@@ -6,9 +6,9 @@ import Graphics.GL.Types
 import Graphics.GL.Tokens
 
 import Linear.Matrix
+
 import BufferedObject
 import Shader
-import Camera
 
 data SceneObject = SceneObject {
     object :: BufferedObject,
@@ -22,13 +22,3 @@ loadMatrix :: Maybe GLint -> M44 Float -> IO ()
 loadMatrix Nothing _ = putStrLn "WARNING: uniform value is not defined"
 loadMatrix (Just location) m = uniformMatrix location m
 
-drawSceneObject :: SceneObject -> Camera -> IO ()
-drawSceneObject obj activeCamera = do
-    useProgram $ program obj
-    projLoc <- getUniformLocation (program obj) "projection"
-    viewLoc <- getUniformLocation (program obj) "view"
-    modelLoc <- getUniformLocation (program obj) "model"
-    loadMatrix projLoc (projection activeCamera)
-    loadMatrix viewLoc (view activeCamera)
-    loadMatrix modelLoc (modelMatrix obj)
-    drawObject $ object obj

@@ -5,6 +5,8 @@ import Linear.Matrix
 
 import Camera
 import SceneObject
+import BufferedObject
+import Shader
 
 data Scene = Scene {
     objects :: [SceneObject],
@@ -27,6 +29,17 @@ scene :: [SceneObject] -> [Camera] -> Either String Scene
 scene [] _ = Left "empty scene not allowed"
 scene _ [] = Left "scene without camera not allowed"
 scene o c = Right $ Scene o c 0
+
+drawSceneObject :: SceneObject -> Camera -> IO ()
+drawSceneObject obj activeCamera = do
+    useProgram $ program obj
+    projLoc <- getUniformLocation (program obj) "projection"
+    viewLoc <- getUniformLocation (program obj) "view"
+    modelLoc <- getUniformLocation (program obj) "model"
+    loadMatrix projLoc (projection activeCamera)
+    loadMatrix viewLoc (view activeCamera)
+    loadMatrix modelLoc (modelMatrix obj)
+    drawObject $ object obj
 
 drawScene :: Scene -> IO ()
 drawScene s = do
