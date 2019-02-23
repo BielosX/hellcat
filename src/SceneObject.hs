@@ -12,7 +12,7 @@ import Camera
 
 data SceneObject = SceneObject {
     object :: BufferedObject,
-    localMatrix :: M44 Float,
+    modelMatrix :: M44 Float,
     program :: Program
 }
 
@@ -26,9 +26,9 @@ drawSceneObject :: SceneObject -> Camera -> IO ()
 drawSceneObject obj activeCamera = do
     useProgram $ program obj
     projLoc <- getUniformLocation (program obj) "projection"
-    wordLoc <- getUniformLocation (program obj) "word"
+    viewLoc <- getUniformLocation (program obj) "view"
     modelLoc <- getUniformLocation (program obj) "model"
     loadMatrix projLoc (projection activeCamera)
-    loadMatrix wordLoc (word activeCamera)
-    loadMatrix modelLoc (localMatrix obj)
+    loadMatrix viewLoc (view activeCamera)
+    loadMatrix modelLoc (modelMatrix obj)
     drawObject $ object obj

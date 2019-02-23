@@ -69,7 +69,7 @@ data CameraDescription = CameraDescription {
 instance Aeson.FromJSON CameraDescription where
 
 toCamera :: Resolution -> CameraDescription -> Camera
-toCamera res (CameraDescription pos rot) = perCam {word = trans}
+toCamera res (CameraDescription pos rot) = perCam {view = trans}
     where perCam = perspectiveCam (pi/4.0) (ratio res) 0.1 100.0
           p = toVector pos
           r = toQuaternion rot
