@@ -1,13 +1,17 @@
-#version 330 core
+#version 430 core
 
-uniform vec3 point_light_pos;
-uniform float point_light_intensity;
+layout(std430, binding = 1) buffer pointLightPos {
+    vec4 pLightPos[];
+};
+layout(std430, binding = 2) buffer pointLightIntensity {
+    float intensity[];
+};
 
-in vec4 vert_pos;
+flat in vec4 vert_pos;
 out vec3 color;
 
 void main() {
-    float dist = length(vert_pos, (point_light_pos, 1));
-    float coef = (point_light_intensity/(dist*dist));
-    color = clamp(coef * vec3(1,0,0), vec3(0,0,0), vec3(1,1,1));
+    float dist = length(pLightPos[0] - vert_pos);
+    float coef = (intensity[0]/(dist*dist));
+    color = coef * vec3(1,0,0);
 }

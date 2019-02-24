@@ -1,4 +1,4 @@
-module Scene(scene, Scene, drawScene, transformCurrentCam) where
+module Scene(scene, Scene, drawScene, transformCurrentCam, Lights(..)) where
 
 import Graphics.GL.Types
 import Data.List
@@ -8,10 +8,18 @@ import Camera
 import SceneObject
 import BufferedObject
 import Shader
+import Light
+
+data Lights = Lights {
+    lights :: [Light],
+    pointLightsCoordsBuf :: ShaderStorageBuffer,
+    pointLightsIntens :: ShaderStorageBuffer
+}
 
 data Scene = Scene {
     objects :: [SceneObject],
     cameras :: [Camera],
+    sceneLights :: Lights,
     currentCam :: Int
 }
 
@@ -26,10 +34,10 @@ updateAt 0 (x:xs) f = (f x):xs
 updateAt _ [] _ = []
 updateAt n (x:xs) f = x:(updateAt (n-1) xs f)
 
-scene :: [SceneObject] -> [Camera] -> Either String Scene
-scene [] _ = Left "empty scene not allowed"
-scene _ [] = Left "scene without camera not allowed"
-scene o c = Right $ Scene o c 0
+scene :: [SceneObject] -> [Camera] -> Lights -> Either String Scene
+scene [] _ _ = Left "empty scene not allowed"
+scene _ [] _ = Left "scene without camera not allowed"
+scene o c l = Right $ Scene o c l 0
 
 loadMatrix :: Maybe GLint -> M44 Float -> IO ()
 loadMatrix Nothing _ = putStrLn "WARNING: uniform value is not defined"
@@ -51,7 +59,10 @@ drawScene s = do
     let cam = at (currentCam s) (cameras s)
     case cam of
         Nothing -> return ()
-        (Just c) -> mapM_ (\o -> drawSceneObject o c) (objects s)
+        (Just c) -> do
+            bindSSBBase (pointLightsCoordsBuf $ sceneLights s) 1
+            bindSSBBase (pointLightsIntens $ sceneLights s) 2
+            mapM_ (\o -> drawSceneObject o c) (objects s)
 
 transformCurrentCam :: Scene -> M44 Float -> Scene
 transformCurrentCam s m = s { cameras = newCameras }

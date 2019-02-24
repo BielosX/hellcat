@@ -1,15 +1,20 @@
-#version 330 core
+#version 430 core
 
 layout(location = 0) in vec3 vertexPosition;
+//layout(std430, binding = 1) buffer pointLightPos {
+//    vec4 pLightPos[];
+//};
+//layout(std430, binding = 2) buffer pointLightIntensity {
+//    float intensity;
+//};
 
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform vec3 point_light_pos;
 
-out vec4 vert_pos;
+flat out vec4 vert_pos;
 
 void main() {
     gl_Position = projection * view * model * vec4(vertexPosition, 1);
-    vert_pos = model * (vertexPosition, 1);
+    vert_pos = model * vec4(vertexPosition, 1);
 }

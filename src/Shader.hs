@@ -6,7 +6,11 @@ module Shader(
                 Program(..),
                 getUniformLocation,
                 uniformMatrix,
-                Shader(..)
+                Shader(..),
+                ShaderStorageBuffer(..),
+                emptySSB,
+                loadShaderStorageBuffer,
+                bindSSBBase
             ) where
 
 import System.IO
@@ -27,6 +31,8 @@ import qualified Data.Map.Strict as Map
 import Linear.V4
 import Linear.Matrix
 
+import Buffer
+
 data ShaderType = VertexShader | FragmentShader deriving (Show,Eq)
 
 data Status = Success | Fail
@@ -34,6 +40,22 @@ data Status = Success | Fail
 newtype Shader = Shader GLuint deriving (Show, Eq)
 
 newtype Program = Program GLuint deriving (Show, Eq)
+
+newtype ShaderStorageBuffer = ShaderStorageBuffer GLuint deriving (Show, Eq)
+
+data LogType = ShaderLog | ProgramLog
+
+emptySSB = ShaderStorageBuffer 0
+
+loadShaderStorageBuffer :: (Storable b) => [a] -> (a -> [b]) -> IO ShaderStorageBuffer
+loadShaderStorageBuffer a f = do
+    id <- newBuffer a f GL_SHADER_STORAGE_BUFFER
+    return $ ShaderStorageBuffer id
+
+bindSSBBase :: ShaderStorageBuffer -> Int -> IO ()
+bindSSBBase (ShaderStorageBuffer b) i = do
+    let v = (fromIntegral :: Int -> GLuint) i
+    glBindBufferBase GL_SHADER_STORAGE_BUFFER v b
 
 convType :: ShaderType -> GLenum
 convType VertexShader = GL_VERTEX_SHADER
@@ -97,12 +119,14 @@ withString str f = allocaBytes (size + 1) $ \ptr -> do
     f ptr
     where size = length str
 
-getLog :: GLuint -> IO String
-getLog id = do
+getLog :: LogType -> GLuint -> IO String
+getLog t id = do
     len <- getLogLen id
     let size = (fromIntegral :: GLint -> Int) len
     allocaGLcharArray size $ \ptr -> do
-        glGetShaderInfoLog id len nullPtr ptr
+        case t of
+            ShaderLog -> glGetShaderInfoLog id len nullPtr ptr
+            ProgramLog -> glGetProgramInfoLog id len nullPtr ptr
         glCharArrayToString ptr size
 
 loadShader :: ShaderType -> FilePath -> ExceptT String IO Shader
@@ -127,7 +151,7 @@ _loadShader t p = do
     case status of
         Success -> return $ Right $ Shader shaderId
         Fail -> do
-            log <- getLog shaderId
+            log <- getLog ShaderLog shaderId
             glDeleteShader shaderId
             return $ Left log
 
@@ -167,5 +191,7 @@ _createProgram shaders = do
     glLinkProgram prog
     status <- getLinkStatus prog
     case status of
-        Fail -> return $ Left "Unable to link program"
+        Fail -> do
+            log <- getLog ProgramLog prog
+            return $ Left log
         Success -> return $ Right $ Program prog

@@ -1,6 +1,7 @@
 module BufferedObject (loadModel, drawObject, BufferedObject(..)) where
 
 import Model
+import Buffer
 
 import Graphics.GL.Functions
 import Graphics.GL.Groups
@@ -75,18 +76,6 @@ newVAO = alloca $ \ptr -> do
 
 setCurrentVAO :: VertexArrayObject -> IO ()
 setCurrentVAO (VertexArrayObject id) = glBindVertexArray id
-
-newBuffer :: Storable b => [a] -> (a -> [b]) -> GLenum -> IO GLuint
-newBuffer [] _ _ = error "Array is empty"
-newBuffer a f e = alloca $ \ptr -> do
-            glGenBuffers 1 ptr
-            id <- peek ptr
-            glBindBuffer e id
-            let array = join $ fmap f a
-            let size = (length array) * (sizeOf $ head array)
-            withArray array $ \arrayPtr -> do
-                glBufferData e (fromIntegral size :: GLsizeiptr) arrayPtr GL_STATIC_DRAW
-            return id
 
 newVertexBuffer :: [BufferedObject.Vertex3] -> IO VertexBuffer
 newVertexBuffer v = fmap (VertexBuffer size) $ newBuffer v (\(BufferedObject.Vertex3 x y z) -> [x,y,z]) GL_ARRAY_BUFFER

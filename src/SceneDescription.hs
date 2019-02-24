@@ -6,16 +6,19 @@ import System.FilePath.Posix
 import Control.Monad.Except
 import System.IO as S
 import qualified Data.Aeson as Aeson
+import Data.Aeson.Types
 import qualified Data.Yaml as Yaml
 import Data.ByteString.Lazy.Char8 as LC
 import Data.ByteString.Char8 as C
 import qualified Data.Map.Strict as Map
 import Linear.Quaternion
 import Linear.V3
+import Linear.V4
 import Linear.Matrix
 import qualified Data.Set as Set
 import Data.List as List
 import Data.Bifunctor
+import qualified Data.Text as T
 
 import Scene
 import BufferedObject
@@ -24,6 +27,7 @@ import ObjFile
 import SceneObject
 import Config
 import Camera
+import Light
 
 data ModelFile = WaveFront {
     file :: String
@@ -41,6 +45,8 @@ instance Aeson.FromJSON Position where
 
 toVector :: Position -> V3 Float
 toVector (Position x y z) = V3 x y z
+
+toVector4 (Position x y z) = V4 x y z 1
 
 data Rotation = Rotation {
     xr :: Float,
@@ -84,9 +90,25 @@ data SceneObjectDescription = SceneObjectDescription {
 
 instance Aeson.FromJSON SceneObjectDescription where
 
+data LightDescription = PointLightDescription {
+    intensity :: Float,
+    lightPosition :: Position
+} deriving (Generic, Show)
+
+instance Aeson.FromJSON LightDescription where
+    parseJSON = withObject "LightDescription" $ \v -> do
+        lightType <- parseField v $ T.pack "type"
+        case lightType of
+            "PointLight" -> do
+                i <- parseField v (T.pack "intensity") :: Parser Float
+                p <- parseField v (T.pack "position") :: Parser Position
+                return $ PointLightDescription i p
+            _ -> fail "Wrong light type"
+
 data SceneDescription = SceneDescription {
     cameras :: [CameraDescription],
-    objects :: [SceneObjectDescription]
+    objects :: [SceneObjectDescription],
+    lights :: [LightDescription]
 } deriving (Generic, Show)
 
 instance Aeson.FromJSON SceneDescription where
@@ -138,11 +160,24 @@ _loadSceneObjects (x:xs) bm sm pm = do
     let s = shaders x
     (newSM, newPM, program) <- getProgram s sm pm
     (newBM, bo) <- lift $ getBufferedObject (modelFile x) bm
-    let pos = toVector $ position x
+    let pos = toVector $ SceneDescription.position x
     let rot = toQuaternion $ rotation x
     let transMat = mkTransformation rot pos
     let sceneObject = SceneObject bo transMat program
     fmap (sceneObject:) (_loadSceneObjects xs newBM newSM newPM)
+
+toLight :: LightDescription -> Light
+toLight (PointLightDescription i p) = PointLight i (toVector4 p)
+
+loadSceneLights :: [LightDescription] -> ExceptT String IO Lights
+loadSceneLights [] = return $ Lights [] emptySSB emptySSB
+loadSceneLights a = do
+    let l = fmap toLight a
+    let inten = fmap Light.intensity l
+    let pos = fmap Light.position l
+    posSSB <- liftIO $ loadShaderStorageBuffer pos (\(V4 x y z w) -> [x,y,z,w])
+    intenSSB <- liftIO $ loadShaderStorageBuffer inten (\i -> [i])
+    return $ Lights l posSSB intenSSB
 
 getSceneDescription :: FilePath -> ExceptT String IO SceneDescription
 getSceneDescription path = do
@@ -161,7 +196,8 @@ loadScene :: FilePath -> (CameraDescription -> Camera) -> ExceptT String IO Scen
 loadScene path f= do
     description <- getSceneDescription path
     sceneObjects <- loadSceneObjects (objects description)
+    l <- loadSceneLights (SceneDescription.lights description)
     let cam = fmap f (cameras description)
-    result <- liftEither $ scene sceneObjects cam
+    result <- liftEither $ scene sceneObjects cam l
     return result
 

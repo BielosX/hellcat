@@ -21,3 +21,10 @@ objects:
       shaders:
           - "shader.vert"
           - "shader.frag"
+lights:
+    - position:
+        xp: 0
+        yp: 0
+        zp: -150
+      intensity: 100
+      type: PointLight
