@@ -24,7 +24,7 @@ parseLines (x:xs) m = let tokens = lexer x in
 
 updateModel :: Value -> Model -> Model
 updateModel (ObjParser.Vertex3 x y z) (Model v i) = Model (v3:v) i
-    where v3 = M.Vertex3 x y z
+    where v3 = M.Vector3 x y z
 updateModel (ObjParser.FaceDef a1 a2 a3) (Model v i) = Model v (idx:i)
     where idx = TriangleIndex (vIdx a1 - 1) (vIdx a2 - 1) (vIdx a3 - 1)
 updateModel _ m = m

@@ -39,8 +39,8 @@ data FaceIndices = FaceIndices GLuint GLuint GLuint
 
 vertexCoordIdx = 0
 
-convV3 :: Model.Vertex3 -> BufferedObject.Vertex3
-convV3 (Model.Vertex3 x y z) = BufferedObject.Vertex3 x y z
+convV3 ::Vector3 -> Vertex3
+convV3 (Vector3 x y z) = Vertex3 x y z
 
 convIdx :: TriangleIndex -> FaceIndices
 convIdx (TriangleIndex x y z) = FaceIndices (c x) (c y) (c z)
