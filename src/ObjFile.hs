@@ -78,11 +78,31 @@ _recalculate next ((idx, Nothing):xs) t m = let (i, newMap) = _recalculate next 
 _recalculate next ((idx, Just nIdx):xs) t m = let (i, newMap) = _recalculate nxt xs t im in (newIdx:i, newMap)
     where (nxt, newIdx, im) = withNormIdx next idx nIdx t m
 
+zipMaybe :: [a] -> [b] -> [(a, Maybe b)]
+zipMaybe [] _ = []
+zipMaybe (x:xs) [] = (x, Nothing):(zipMaybe xs [])
+zipMaybe (x:xs) (y:ys) = (x, Just y):(zipMaybe xs ys)
+
+extractVertices :: IndicesMap -> [M.Vector3]
+extractVertices = fmap (vec . snd) . sortBy keys . Map.toList
+    where keys = \(k1,v1) (k2,v2) -> compare k1 k2
+
+extractNormals :: IndicesMap -> [M.Vector3]
+extractNormals = catMaybes . fmap (norm . snd) . sortBy keys . Map.toList
+    where keys = \(k1,v1) (k2,v2) -> compare k1 k2
+
+recalculate :: ObjData -> ([M.Vector3], [M.Vector3], [TriangleIndex])
+recalculate obj = let (idxs, m) =  _recalculate availableIdx pairs lookupTables Map.empty in (extractVertices m, extractNormals m, idxs)
+    where availableIdx = (+1) $ L.maximum (vecIndices obj >>= \(TriangleIndex x y z) -> [x,y,z])
+          pairs = zipMaybe (vecIndices obj) (normIndices obj)
+          lookupTables = LookupTables (fromList $ v obj) (fromList $ n obj)
+
 readObjFile :: FilePath -> IO Model
 readObjFile path = do
     content <- I.readFile path
     let d = parseLines (fmap T.unpack $ T.lines content) emptyData
-    return $ M.Model (v d) (vecIndices d)
+    let (vert, norm, ind) = recalculate d
+    return $ M.Model vert ind
 
 parseLines :: [String] -> ObjData -> ObjData
 parseLines [] d = ObjData (L.reverse $ v d)
