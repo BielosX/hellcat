@@ -36,7 +36,7 @@ type IndicesMap = Map.Map Int MapEntry
 emptyData = ObjData [] [] [] []
 
 withNoNormIdx :: TriangleIndex -> LookupTables -> IndicesMap -> IndicesMap
-withNoNormIdx (TriangleIndex x y z) t m = L.foldr (\a b -> Map.insert a (entry $ vert a) b) Map.empty [x,y,z]
+withNoNormIdx (TriangleIndex x y z) t m = L.foldr (\a b -> Map.insert a (entry $ vert a) b) m [x,y,z]
     where vert i = (vVec t) ! i
           entry v = MapEntry Nothing v Nothing
 
