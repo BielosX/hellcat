@@ -25,7 +25,10 @@ readObjFile path = do
     return $ M.Model (v d) (vecIndices d)
 
 parseLines :: [String] -> ObjData -> ObjData
-parseLines [] d = ObjData (L.reverse $ v d) (L.reverse $ n d) (L.reverse $ vecIndices d) (L.reverse $ normIndices d)
+parseLines [] d = ObjData (L.reverse $ v d)
+    (L.reverse $ n d)
+    (L.reverse $ vecIndices d)
+    (L.reverse $ normIndices d)
 parseLines (x:xs) d = let tokens = lexer x in
                         case tokens of
                             [] -> parseLines xs d
