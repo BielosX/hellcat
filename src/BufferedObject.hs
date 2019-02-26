@@ -89,6 +89,6 @@ newIndexBuffer i = fmap (IndexBuffer size) $ newBuffer i (\(FaceIndices x y z) -
 assignArrayBufferToVAO :: GLuint -> ArrayBuffer -> VertexArrayObject -> IO ()
 assignArrayBufferToVAO idx (ArrayBuffer _ vb) (VertexArrayObject vao) = do
     glBindVertexArray vao
-    glEnableVertexAttribArray vertexCoordIdx
+    glEnableVertexAttribArray idx
     glBindBuffer GL_ARRAY_BUFFER vb
     glVertexAttribPointer idx 3 GL_FLOAT 0 0 nullPtr
