@@ -13,9 +13,11 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
-flat out vec4 vert_pos;
+out vec4 vert_pos;
+out vec4 norm_pos;
 
 void main() {
     gl_Position = projection * view * model * vec4(vertexPosition, 1);
     vert_pos = model * vec4(vertexPosition, 1);
+    norm_pos = view * model * vec4(normalPosition, 1);
 }
