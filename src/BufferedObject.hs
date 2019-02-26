@@ -51,7 +51,9 @@ loadModel :: Model -> IO BufferedObject
 loadModel (Model v n i) = do
     vao <- newVAO
     vbo <- newArrayBuffer $ fmap convV3 v
+    nVbo <- newArrayBuffer $ fmap convV3 n
     assignArrayBufferToVAO vertexCoordIdx vbo vao
+    assignArrayBufferToVAO normalsIdx nVbo vao
     if length i > 0 then do
         idxbuff <- newIndexBuffer $ fmap convIdx i
         return $ BufferedObject vao vbo (Just idxbuff)

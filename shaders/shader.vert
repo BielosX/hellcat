@@ -1,6 +1,7 @@
 #version 430 core
 
 layout(location = 0) in vec3 vertexPosition;
+layout(location = 1) in vec3 normalPosition;
 //layout(std430, binding = 1) buffer pointLightPos {
 //    vec4 pLightPos[];
 //};

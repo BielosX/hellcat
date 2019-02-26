@@ -117,6 +117,11 @@ parseLines (x:xs) d = let tokens = lexer x in
 updateObjData :: Value -> ObjData -> ObjData
 updateObjData (ObjParser.Vertex3 x y z) (ObjData v n i ni) = ObjData (v3:v) n i ni
     where v3 = M.Vector3 x y z
-updateObjData (ObjParser.FaceDef a1 a2 a3) (ObjData v n i ni) = ObjData v n (idx:i) ni
+updateObjData (ObjParser.NormVector x y z) (ObjData v n i ni) = ObjData v (n3:n) i ni
+    where n3 = M.Vector3 x y z
+updateObjData (ObjParser.FaceDef a1 a2 a3) (ObjData v n i ni) = ObjData v n (idx:i) (maybe ni (\ti -> ti:ni) nIdx)
     where idx = TriangleIndex (vIdx a1 - 1) (vIdx a2 - 1) (vIdx a3 - 1)
+          nIdx = toIdx $ fmap (\val -> val - 1) $ catMaybes [normIdx a1, normIdx a2, normIdx a3]
+          toIdx [v1, v2, v3] = Just $ TriangleIndex v1 v2 v3
+          toIdx _ = Nothing
 updateObjData _ m = m
