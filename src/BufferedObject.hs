@@ -17,7 +17,7 @@ data VertexArrayObject = VertexArrayObject {
     id :: GLuint
 }
 
-data VertexBuffer = VertexBuffer {
+data ArrayBuffer = ArrayBuffer {
     vSize :: GLsizei,
     vId :: GLuint
 }
@@ -29,7 +29,7 @@ data IndexBuffer = IndexBuffer {
 
 data BufferedObject = BufferedObject {
     vao :: VertexArrayObject,
-    vertices :: VertexBuffer,
+    vertices :: ArrayBuffer,
     indices :: Maybe IndexBuffer
 }
 
@@ -38,6 +38,7 @@ data Vertex3 = Vertex3 GLfloat GLfloat GLfloat
 data FaceIndices = FaceIndices GLuint GLuint GLuint
 
 vertexCoordIdx = 0
+normalsIdx = 1
 
 convV3 ::Vector3 -> Vertex3
 convV3 (Vector3 x y z) = Vertex3 x y z
@@ -49,8 +50,8 @@ convIdx (TriangleIndex x y z) = FaceIndices (c x) (c y) (c z)
 loadModel :: Model -> IO BufferedObject
 loadModel (Model v i) = do
     vao <- newVAO
-    vbo <- newVertexBuffer $ fmap convV3 v
-    assignVertexBufferToVAO vbo vao
+    vbo <- newArrayBuffer $ fmap convV3 v
+    assignArrayBufferToVAO vertexCoordIdx vbo vao
     if length i > 0 then do
         idxbuff <- newIndexBuffer $ fmap convIdx i
         return $ BufferedObject vao vbo (Just idxbuff)
@@ -77,17 +78,17 @@ newVAO = alloca $ \ptr -> do
 setCurrentVAO :: VertexArrayObject -> IO ()
 setCurrentVAO (VertexArrayObject id) = glBindVertexArray id
 
-newVertexBuffer :: [BufferedObject.Vertex3] -> IO VertexBuffer
-newVertexBuffer v = fmap (VertexBuffer size) $ newBuffer v (\(BufferedObject.Vertex3 x y z) -> [x,y,z]) GL_ARRAY_BUFFER
+newArrayBuffer :: [BufferedObject.Vertex3] -> IO ArrayBuffer
+newArrayBuffer v = fmap (ArrayBuffer size) $ newBuffer v (\(BufferedObject.Vertex3 x y z) -> [x,y,z]) GL_ARRAY_BUFFER
     where size = (fromIntegral :: Int -> GLsizei) $ length v
 
 newIndexBuffer :: [FaceIndices] -> IO IndexBuffer
 newIndexBuffer i = fmap (IndexBuffer size) $ newBuffer i (\(FaceIndices x y z) -> [x,y,z]) GL_ELEMENT_ARRAY_BUFFER
     where size = (fromIntegral :: Int -> GLsizei) $ (length i) * 3
 
-assignVertexBufferToVAO :: VertexBuffer -> VertexArrayObject -> IO ()
-assignVertexBufferToVAO (VertexBuffer _ vb) (VertexArrayObject vao) = do
+assignArrayBufferToVAO :: GLuint -> ArrayBuffer -> VertexArrayObject -> IO ()
+assignArrayBufferToVAO idx (ArrayBuffer _ vb) (VertexArrayObject vao) = do
     glBindVertexArray vao
     glEnableVertexAttribArray vertexCoordIdx
     glBindBuffer GL_ARRAY_BUFFER vb
-    glVertexAttribPointer vertexCoordIdx 3 GL_FLOAT 0 0 nullPtr
+    glVertexAttribPointer idx 3 GL_FLOAT 0 0 nullPtr
