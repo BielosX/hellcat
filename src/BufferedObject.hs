@@ -48,7 +48,7 @@ convIdx (TriangleIndex x y z) = FaceIndices (c x) (c y) (c z)
     where c = (fromIntegral :: Int -> GLuint)
 
 loadModel :: Model -> IO BufferedObject
-loadModel (Model v i) = do
+loadModel (Model v n i) = do
     vao <- newVAO
     vbo <- newArrayBuffer $ fmap convV3 v
     assignArrayBufferToVAO vertexCoordIdx vbo vao

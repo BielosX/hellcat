@@ -6,7 +6,8 @@ data TriangleIndex = TriangleIndex Int Int Int deriving (Eq, Show)
 
 data Model = Model {
     vertices :: [Vector3],
+    normals :: [Vector3],
     indices :: [TriangleIndex]
 } deriving (Eq, Show)
 
-emptyModel = Model [] []
+emptyModel = Model [] [] []

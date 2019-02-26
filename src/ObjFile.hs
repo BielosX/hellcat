@@ -102,7 +102,7 @@ readObjFile path = do
     content <- I.readFile path
     let d = parseLines (fmap T.unpack $ T.lines content) emptyData
     let (vert, norm, ind) = recalculate d
-    return $ M.Model vert ind
+    return $ M.Model vert norm ind
 
 parseLines :: [String] -> ObjData -> ObjData
 parseLines [] d = ObjData (L.reverse $ v d)
