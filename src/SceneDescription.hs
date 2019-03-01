@@ -68,6 +68,7 @@ ratio (Resolution width height) = w / h
           h = fromIntegral height :: Float
 
 data CameraDescription = CameraDescription {
+    camId :: Int,
     camPosition :: Position,
     camRotation :: Rotation
 } deriving (Generic, Show)
@@ -75,13 +76,14 @@ data CameraDescription = CameraDescription {
 instance Aeson.FromJSON CameraDescription where
 
 toCamera :: Resolution -> CameraDescription -> Camera
-toCamera res (CameraDescription pos rot) = perCam {view = trans}
-    where perCam = perspectiveCam (pi/4.0) (ratio res) 0.1 100.0
+toCamera res (CameraDescription id pos rot) = perCam {view = trans}
+    where perCam = perspectiveCam id (pi/4.0) (ratio res) 0.1 100.0
           p = toVector pos
           r = toQuaternion rot
           trans = mkTransformation r p
 
 data SceneObjectDescription = SceneObjectDescription {
+    objId :: Int,
     position :: Position,
     rotation :: Rotation,
     modelFile :: ModelFile,
@@ -163,7 +165,7 @@ _loadSceneObjects (x:xs) bm sm pm = do
     let pos = toVector $ SceneDescription.position x
     let rot = toQuaternion $ rotation x
     let transMat = mkTransformation rot pos
-    let sceneObject = SceneObject bo transMat program
+    let sceneObject = SceneObject (objId x) bo identity program
     fmap (sceneObject:) (_loadSceneObjects xs newBM newSM newPM)
 
 toLight :: LightDescription -> Light

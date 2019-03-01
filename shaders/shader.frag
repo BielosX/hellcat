@@ -15,7 +15,7 @@ void main() {
     vec3 vertToLight = pLightPos[0].xyz - vert_pos.xyz;
     float dist = length(vertToLight);
     vec3 unit = normalize(vertToLight);
-    float cosinus = clamp(dot(unit, vertToLight), 0, 1);
+    float cosinus = clamp(dot(unit, normalize(norm_pos.xyz)), 0, 1);
     float coef = (intensity[0]/(dist*dist)) * cosinus;
     color = coef * vec3(1,0,0);
 }

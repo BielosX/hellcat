@@ -1,4 +1,12 @@
-module Scene(scene, Scene, drawScene, transformCurrentCam, Lights(..)) where
+module Scene (
+    scene,
+    Scene,
+    drawScene,
+    transformCurrentCam,
+    Lights(..),
+    ObjectRef(..),
+    transformSceneElem
+    ) where
 
 import Graphics.GL.Types
 import Data.List
@@ -22,6 +30,22 @@ data Scene = Scene {
     sceneLights :: Lights,
     currentCam :: Int
 }
+
+data ObjectRef = SceneObjectRef Int |
+                 CameraRef Int deriving (Eq, Show)
+
+transformSceneElem :: Scene -> ObjectRef -> M44 Float -> Scene
+transformSceneElem s (SceneObjectRef r) mat = s { objects = newObj }
+    where newObj = updateObjWithId r (objects s) objectId f
+          f = \obj -> obj { modelMatrix = mat !*! (modelMatrix obj) }
+transformSceneElem s (CameraRef r) mat = s { cameras = newCam }
+    where newCam = updateObjWithId r (cameras s) camId f
+          f = \c -> c { view = mat !*! (view c) }
+
+updateObjWithId :: Int -> [a] -> (a -> Int) -> (a -> a) -> [a]
+updateObjWithId _ [] _ _  = []
+updateObjWithId id (x:xs) toId f | toId x == id = (f x):(updateObjWithId id xs toId f)
+                                 | otherwise = x:(updateObjWithId id xs toId f)
 
 at :: Int -> [a] -> Maybe a
 at 0 [] = Nothing

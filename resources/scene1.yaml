@@ -7,6 +7,7 @@ cameras:
         xr: 0
         yr: 0
         zr: 0
+      camId: 1
 objects:
     - position:
         xp: 0
@@ -21,10 +22,11 @@ objects:
       shaders:
           - "shader.vert"
           - "shader.frag"
+      objId: 1
 lights:
     - position:
         xp: 0
         yp: 0
-        zp: -150
+        zp: -15
       intensity: 100
       type: PointLight
