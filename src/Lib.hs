@@ -50,7 +50,7 @@ sceneMappers = Map.fromList [
     ]
 
 transformScene :: Maybe Int -> Scene -> Scene
-transformScene pressed s = maybe s (\f -> f s) mapper
+transformScene pressed s = maybe s ($ s) mapper
     where mapper = pressed >>= (\p -> Map.lookup p sceneMappers)
 
 render :: GLFW.Window -> Scene -> IO ()
