@@ -14,9 +14,11 @@ import Foreign.Ptr
 import Control.Monad
 import Control.Monad.Except
 import Data.Either
+import Data.Maybe
 import Linear.V3
 import Linear.Matrix
 import Linear.Quaternion
+import qualified Data.Map.Strict as Map
 
 import BufferedObject
 import Model
@@ -31,6 +33,25 @@ import SceneDescription
 moveMat = mkTransformationMat identity
 
 rotateY rad = mkTransformation (axisAngle (V3 0 1 0) rad) (V3 0 0 0)
+
+_getFirstPressed :: Int -> [GLFW.KeyState] -> Maybe Int
+_getFirstPressed n [] = Nothing
+_getFirstPressed n ((GLFW.KeyState'Pressed):xs) = Just n
+_getFirstPressed n (x:xs) = _getFirstPressed (n-1) xs
+
+getFirstPressed a = _getFirstPressed (length a - 1) a
+
+sceneMappers :: Map.Map Int (Scene -> Scene)
+sceneMappers = Map.fromList [
+        (3, \s -> transformCurrentCam s (moveMat $ V3 0 0 0.1)),
+        (2, \s -> transformCurrentCam s (moveMat $ V3 0 0 (-0.1))),
+        (1, \s -> transformCurrentCam s (rotateY $ (-(pi / 180)))),
+        (0, \s -> transformCurrentCam s (rotateY $ (pi / 180)))
+    ]
+
+transformScene :: Maybe Int -> Scene -> Scene
+transformScene pressed s = maybe s (\f -> f s) mapper
+    where mapper = pressed >>= (\p -> Map.lookup p sceneMappers)
 
 render :: GLFW.Window -> Scene -> IO ()
 render window s = do
@@ -47,15 +68,8 @@ render window s = do
         k1 <- GLFW.getKey window GLFW.Key'S
         k2 <- GLFW.getKey window GLFW.Key'A
         k3 <- GLFW.getKey window GLFW.Key'D
-        let newS = case k0 of
-                GLFW.KeyState'Pressed -> transformCurrentCam s (moveMat $ V3 0 0 0.1)
-                _ -> case k1 of
-                        GLFW.KeyState'Pressed -> transformCurrentCam s (moveMat $ V3 0 0 (-0.1))
-                        _ -> case k2 of
-                                GLFW.KeyState'Pressed -> transformCurrentCam s (rotateY $ (-(pi / 180)))
-                                _ -> case k3 of
-                                        GLFW.KeyState'Pressed -> transformCurrentCam s (rotateY $ (pi / 180))
-                                        _ -> s
+        let pressed = getFirstPressed [k0, k1, k2, k3]
+        let newS = transformScene pressed s
         drawScene newS
         GLFW.swapBuffers window
         render window newS
