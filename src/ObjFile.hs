@@ -8,7 +8,6 @@ import Data.Text.Lazy.IO as I
 import Data.Text.Lazy as T
 import System.IO
 import Data.List as L
-import qualified Data.Map.Strict as Map
 import Data.Vector
 import Control.Monad.State.Lazy
 import Data.Maybe
@@ -20,89 +19,26 @@ data ObjData = ObjData {
     normIndices :: [TriangleIndex]
 }
 
+emptyData = ObjData [] [] [] []
+
 data MapEntry = MapEntry {
     normalIdx :: Maybe Int,
     vec :: M.Vector3,
     norm :: Maybe M.Vector3
 } deriving (Eq,Show)
 
-data LookupTables = LookupTables {
-    vVec :: Vector M.Vector3,
-    nVec :: Vector M.Vector3
-}
-
-type IndicesMap = Map.Map Int MapEntry
-
-emptyData = ObjData [] [] [] []
-
-withNoNormIdx :: TriangleIndex -> LookupTables -> IndicesMap -> IndicesMap
-withNoNormIdx (TriangleIndex x y z) t m = L.foldr (\a b -> Map.insert a (entry $ vert a) b) m [x,y,z]
-    where vert i = (vVec t) ! i
-          entry v = MapEntry Nothing v Nothing
-
-newEntryWithNorm :: (Int,Int) -> LookupTables -> MapEntry
-newEntryWithNorm (vIdx, nIdx) t = MapEntry (Just nIdx) vert (Just norm)
-    where vert = (vVec t) ! vIdx
-          norm = (nVec t) ! nIdx
-
-idxPair :: Int -> (Int,Int) -> LookupTables -> IndicesMap -> ((Int, Int), IndicesMap)
-idxPair next (vIdx, nIdx) t m = case Map.lookup vIdx m of
-    Nothing -> ((next, vIdx), Map.insert vIdx (newEntryWithNorm (vIdx, nIdx) t) m)
-    (Just k) -> if (fromMaybe (-1) $ normalIdx k) == nIdx then
-                    ((next, vIdx), m)
-                else
-                    ((next+1, next), Map.insert next (newEntryWithNorm (vIdx, nIdx) t) m)
-
-extract :: ((a,b), c) -> (a,b,c)
-extract ((a,b), c) = (a,b,c)
-
-withNormIdx :: Int ->
-    TriangleIndex ->
-    TriangleIndex ->
-    LookupTables ->
-    IndicesMap ->
-    (Int, TriangleIndex, IndicesMap)
-withNormIdx next (TriangleIndex x y z) (TriangleIndex nx ny nz) t m = extract $ (flip runState) m $ do
-    (next1, vIdx1) <- state $ idxPair next (x,nx) t
-    (next2, vIdx2) <- state $ idxPair next1 (y, ny) t
-    (next3, vIdx3) <- state $ idxPair next2 (z, nz) t
-    return (next3, TriangleIndex vIdx1 vIdx2 vIdx3)
-
-_recalculate :: Int ->
-    [(TriangleIndex, Maybe TriangleIndex)] ->
-    LookupTables  ->
-    IndicesMap ->
-    ([TriangleIndex], IndicesMap)
-_recalculate next [] t m = ([], m)
-_recalculate next ((idx, Nothing):xs) t m = let (i, newMap) = _recalculate next xs t (withNoNormIdx idx t m) in (idx:i, newMap)
-_recalculate next ((idx, Just nIdx):xs) t m = let (i, newMap) = _recalculate nxt xs t im in (newIdx:i, newMap)
-    where (nxt, newIdx, im) = withNormIdx next idx nIdx t m
-
-zipMaybe :: [a] -> [b] -> [(a, Maybe b)]
-zipMaybe [] _ = []
-zipMaybe (x:xs) [] = (x, Nothing):(zipMaybe xs [])
-zipMaybe (x:xs) (y:ys) = (x, Just y):(zipMaybe xs ys)
-
-extractVertices :: IndicesMap -> [M.Vector3]
-extractVertices = fmap (vec . snd) . sortBy keys . Map.toList
-    where keys = \(k1,v1) (k2,v2) -> compare k1 k2
-
-extractNormals :: IndicesMap -> [M.Vector3]
-extractNormals = catMaybes . fmap (norm . snd) . sortBy keys . Map.toList
-    where keys = \(k1,v1) (k2,v2) -> compare k1 k2
-
-recalculate :: ObjData -> ([M.Vector3], [M.Vector3], [TriangleIndex])
-recalculate obj = let (idxs, m) =  _recalculate availableIdx pairs lookupTables Map.empty in (extractVertices m, extractNormals m, idxs)
-    where availableIdx = (+1) $ L.maximum (vecIndices obj >>= \(TriangleIndex x y z) -> [x,y,z])
-          pairs = zipMaybe (vecIndices obj) (normIndices obj)
-          lookupTables = LookupTables (fromList $ v obj) (fromList $ n obj)
+convert :: Vector M.Vector3 -> Vector M.Vector3 -> [TriangleIndex] -> [TriangleIndex] -> ([M.Vector3], [M.Vector3])
+convert vert norm [] [] = ([], [])
+convert vert norm ((TriangleIndex v1 v2 v3):xs) ((TriangleIndex n1 n2 n3):ys) = let (v, n) = ObjFile.convert vert norm xs ys in (cv L.++ v, cn L.++ n)
+    where cv = fmap (\v -> vert ! v) [v1,v2,v3]
+          cn = fmap (\v -> norm ! v) [n1,n2,n3]
 
 readObjFile :: FilePath -> IO Model
 readObjFile path = do
     content <- I.readFile path
     let d = parseLines (fmap T.unpack $ T.lines content) emptyData
-    let (vert, norm, ind) = recalculate d
-    return $ M.Model vert norm ind
+    let c = ObjFile.convert (fromList $ v d) (fromList $ n d) (vecIndices d) (normIndices d)
+    return $ M.Model (fst c) (snd c) []
 
 parseLines :: [String] -> ObjData -> ObjData
 parseLines [] d = ObjData (L.reverse $ v d)

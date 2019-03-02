@@ -27,6 +27,6 @@ lights:
     - position:
         xp: 0
         yp: 0
-        zp: -15
+        zp: 15
       intensity: 100
       type: PointLight
