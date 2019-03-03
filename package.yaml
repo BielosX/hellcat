@@ -35,6 +35,7 @@ dependencies:
 - bytestring
 - filepath
 - vector
+- JuicyPixels
 
 library:
   source-dirs: src
