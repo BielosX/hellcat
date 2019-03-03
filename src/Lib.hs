@@ -94,6 +94,11 @@ ratio (Resolution width height) = w / h
     where w = fromIntegral width :: Float
           h = fromIntegral height :: Float
 
+setUpGL = do
+    glEnable GL_DEPTH_TEST
+    glDepthFunc GL_LESS
+    glEnable GL_CULL_FACE
+
 someFunc :: ExceptT String IO ()
 someFunc = do
     config <- readConfigFile "config.yaml"
@@ -104,8 +109,6 @@ someFunc = do
     window <- creteWindow w h "Test"
     liftIO $ GLFW.makeContextCurrent (Just window)
     liftIO $ GLFW.setStickyKeysInputMode window GLFW.StickyKeysInputMode'Enabled
-    liftIO $ glEnable GL_DEPTH_TEST
-    liftIO $ glDepthFunc GL_LESS
-    liftIO $ glEnable GL_CULL_FACE
+    liftIO $ setUpGL
     s <- loadScene "scene1.yaml" (toCamera res)
     liftIO $ render window s
