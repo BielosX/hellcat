@@ -91,8 +91,8 @@ drawScene s = do
     case cam of
         Nothing -> return ()
         (Just c) -> do
-            bindSSBBase (pointLightsCoordsBuf $ sceneLights s) 2
-            bindSSBBase (pointLightsIntens $ sceneLights s) 3
+            bindSSBBase (pointLightsCoordsBuf $ sceneLights s) 3
+            bindSSBBase (pointLightsIntens $ sceneLights s) 4
             mapM_ (\o -> drawSceneObject o c) (objects s)
 
 transformCurrentCam :: Scene -> M44 Float -> Scene

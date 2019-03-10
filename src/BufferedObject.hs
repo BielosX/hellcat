@@ -19,6 +19,7 @@ data VertexArrayObject = VertexArrayObject {
 
 data ArrayBuffer = ArrayBuffer {
     vSize :: GLsizei,
+    attrType :: AttributeType,
     vId :: GLuint
 }
 
@@ -27,31 +28,44 @@ data IndexBuffer = IndexBuffer {
     iId :: GLuint
 }
 
+data UVBuffer = UVBuffer {
+    uvSize :: GLsizei,
+    uvId :: GLuint
+}
+
 data BufferedObject = BufferedObject {
     vao :: VertexArrayObject,
     vertices :: ArrayBuffer,
     indices :: Maybe IndexBuffer
 }
 
-data Vertex3 = Vertex3 GLfloat GLfloat GLfloat
+data AttributeType = VeretexCoord | NormalCoord | UVCoord
 
 data FaceIndices = FaceIndices GLuint GLuint GLuint
 
+data VertexAttrib = Vertex3 GLfloat GLfloat GLfloat |
+                    UVcoord GLfloat GLfloat
+
 vertexCoordIdx = 0
 normalsIdx = 1
+uvIdx = 2
 
-convV3 ::Vector3 -> Vertex3
+convV3 ::Vector3 -> VertexAttrib
 convV3 (Vector3 x y z) = Vertex3 x y z
+
+convV2 :: Vector2 -> VertexAttrib
+convV2 (Vector2 x y) = UVcoord x y
 
 convIdx :: TriangleIndex -> FaceIndices
 convIdx (TriangleIndex x y z) = FaceIndices (c x) (c y) (c z)
     where c = (fromIntegral :: Int -> GLuint)
 
 loadModel :: Model -> IO BufferedObject
-loadModel (Model v n i) = do
+loadModel (Model v n i uv) = do
     vao <- newVAO
-    vbo <- newArrayBuffer $ fmap convV3 v
-    nVbo <- newArrayBuffer $ fmap convV3 n
+    vbo <- newArrayBuffer VeretexCoord $ fmap convV3 v
+    nVbo <- newArrayBuffer NormalCoord $ fmap convV3 n
+    uvVbo <- newArrayBuffer UVCoord $ fmap convV2 uv
     assignArrayBufferToVAO vertexCoordIdx vbo vao
     assignArrayBufferToVAO normalsIdx nVbo vao
     if length i > 0 then do
@@ -80,17 +94,25 @@ newVAO = alloca $ \ptr -> do
 setCurrentVAO :: VertexArrayObject -> IO ()
 setCurrentVAO (VertexArrayObject id) = glBindVertexArray id
 
-newArrayBuffer :: [BufferedObject.Vertex3] -> IO ArrayBuffer
-newArrayBuffer v = fmap (ArrayBuffer size) $ newBuffer v (\(BufferedObject.Vertex3 x y z) -> [x,y,z]) GL_ARRAY_BUFFER
+convFunc VeretexCoord = \(BufferedObject.Vertex3 x y z) -> [x,y,z]
+convFunc NormalCoord = \(BufferedObject.Vertex3 x y z) -> [x,y,z]
+convFunc UVCoord = \(UVcoord u v) -> [u,v]
+
+newArrayBuffer :: AttributeType -> [VertexAttrib] -> IO ArrayBuffer
+newArrayBuffer t v = fmap (ArrayBuffer size t) $ newBuffer v (convFunc t) GL_ARRAY_BUFFER
     where size = (fromIntegral :: Int -> GLsizei) $ length v
 
 newIndexBuffer :: [FaceIndices] -> IO IndexBuffer
 newIndexBuffer i = fmap (IndexBuffer size) $ newBuffer i (\(FaceIndices x y z) -> [x,y,z]) GL_ELEMENT_ARRAY_BUFFER
     where size = (fromIntegral :: Int -> GLsizei) $ (length i) * 3
 
+attrSize VeretexCoord = 3
+attrSize NormalCoord = 3
+attrSize UVCoord = 2
+
 assignArrayBufferToVAO :: GLuint -> ArrayBuffer -> VertexArrayObject -> IO ()
-assignArrayBufferToVAO idx (ArrayBuffer _ vb) (VertexArrayObject vao) = do
+assignArrayBufferToVAO idx (ArrayBuffer s t vb) (VertexArrayObject vao) = do
     glBindVertexArray vao
     glEnableVertexAttribArray idx
     glBindBuffer GL_ARRAY_BUFFER vb
-    glVertexAttribPointer idx 3 GL_FLOAT 0 0 nullPtr
+    glVertexAttribPointer idx (attrSize t) GL_FLOAT 0 0 nullPtr

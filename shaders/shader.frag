@@ -1,9 +1,9 @@
 #version 430 core
 
-layout(std430, binding = 2) buffer pointLightPos {
+layout(std430, binding = 3) buffer pointLightPos {
     vec4 pLightPos[];
 };
-layout(std430, binding = 3) buffer pointLightIntensity {
+layout(std430, binding = 4) buffer pointLightIntensity {
     float intensity[];
 };
 
