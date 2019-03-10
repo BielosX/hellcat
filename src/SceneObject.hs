@@ -9,13 +9,15 @@ import Linear.Matrix
 
 import BufferedObject
 import Shader
+import Texture
 
 data SceneObject = SceneObject {
     objectId :: Int,
     object :: BufferedObject,
     modelMatrix :: M44 Float,
-    program :: Program
+    program :: Program,
+    texture :: Maybe BufferedTexture
 }
 
-newSceneObject id o p = SceneObject id o identity p
+newSceneObject id o p = SceneObject id o identity p Nothing
 

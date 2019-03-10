@@ -165,7 +165,7 @@ _loadSceneObjects (x:xs) bm sm pm = do
     let pos = toVector $ SceneDescription.position x
     let rot = toQuaternion $ rotation x
     let transMat = mkTransformation rot pos
-    let sceneObject = SceneObject (objId x) bo identity program
+    let sceneObject = SceneObject (objId x) bo identity program Nothing
     fmap (sceneObject:) (_loadSceneObjects xs newBM newSM newPM)
 
 toLight :: LightDescription -> Light

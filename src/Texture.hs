@@ -1,4 +1,8 @@
-module Texture(loadTexture) where
+module Texture(
+                loadTexture,
+                BufferedTexture(..),
+                useTexture
+                ) where
 
 import qualified Data.ByteString as B
 
@@ -16,6 +20,8 @@ import Codec.Picture.Types
 import Codec.Picture.Png
 
 data BufferedTexture = BufferedTexture GLuint deriving (Eq, Show)
+
+useTexture (BufferedTexture t) = glBindTexture GL_TEXTURE_2D t
 
 storeAt :: Storable a => Ptr a -> [a] -> IO (Ptr a)
 storeAt ptr [] = return ptr
