@@ -21,12 +21,6 @@ data ObjData = ObjData {
 
 emptyData = ObjData [] [] [] []
 
-data MapEntry = MapEntry {
-    normalIdx :: Maybe Int,
-    vec :: M.Vector3,
-    norm :: Maybe M.Vector3
-} deriving (Eq,Show)
-
 convert :: Vector M.Vector3 -> Vector M.Vector3 -> [TriangleIndex] -> [TriangleIndex] -> ([M.Vector3], [M.Vector3])
 convert vert norm [] [] = ([], [])
 convert vert norm ((TriangleIndex v1 v2 v3):xs) ((TriangleIndex n1 n2 n3):ys) = let (v, n) = ObjFile.convert vert norm xs ys in (cv L.++ v, cn L.++ n)
