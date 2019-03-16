@@ -26,7 +26,7 @@ import Shader
 import SceneObject
 import Camera
 import Scene
-import ObjFile
+import Wavefront.ObjFile
 import Config
 import SceneDescription
 

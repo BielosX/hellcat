@@ -1,7 +1,7 @@
 {
-module ObjParser where
+module Wavefront.ObjParser where
 
-import ObjLexer
+import Wavefront.ObjLexer
 import Data.Maybe
 import Data.List
 import Data.List.Split

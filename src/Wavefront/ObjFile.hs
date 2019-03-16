@@ -1,7 +1,7 @@
-module ObjFile where
+module Wavefront.ObjFile where
 
-import ObjLexer
-import ObjParser
+import Wavefront.ObjLexer
+import Wavefront.ObjParser
 import Model as M
 
 import Data.Text.Lazy.IO as I
@@ -55,7 +55,7 @@ getUVCoord c (_,_,(TriangleIndex uv1 uv2 uv3)) = fmap (\uv -> uvC ! uv) [uv1, uv
 convert :: Coords -> Indices -> ([M.Vector3], [M.Vector3], [M.Vector2])
 convert coords indices = case firstI indices of
     Nothing -> ([], [], [])
-    (Just i) -> let (v, n, uv) = ObjFile.convert coords (restI indices) in (vc L.++ v, nv L.++ n, uvc L.++ uv)
+    (Just i) -> let (v, n, uv) = Wavefront.ObjFile.convert coords (restI indices) in (vc L.++ v, nv L.++ n, uvc L.++ uv)
         where vc = getVCoord coords i
               nv = getNCoord coords i
               uvc = getUVCoord coords i
@@ -66,7 +66,7 @@ readObjFile path = do
     let d = parseLines (fmap T.unpack $ T.lines content) emptyData
     let coords = Coords (fromList $ v d) (fromList $ n d) (fromList $ uv d)
     let indices = Indices (vecIndices d) (normIndices d) (uvIndices d)
-    let (v, n, uv) = ObjFile.convert coords indices
+    let (v, n, uv) = Wavefront.ObjFile.convert coords indices
     return $ M.Model v n [] uv
 
 parseLines :: [String] -> ObjData -> ObjData
@@ -82,13 +82,13 @@ parseLines (x:xs) d = let tokens = lexer x in
                             t -> parseLines xs $ updateObjData (objParse t) d
 
 updateObjData :: Value -> ObjData -> ObjData
-updateObjData (ObjParser.Vertex3 x y z) (ObjData v n uv i ni uvi) = ObjData (v3:v) n uv i ni uvi
+updateObjData (Wavefront.ObjParser.Vertex3 x y z) (ObjData v n uv i ni uvi) = ObjData (v3:v) n uv i ni uvi
     where v3 = M.Vector3 x y z
-updateObjData (ObjParser.NormVector x y z) (ObjData v n uv i ni uvi) = ObjData v (n3:n) uv i ni uvi
+updateObjData (Wavefront.ObjParser.NormVector x y z) (ObjData v n uv i ni uvi) = ObjData v (n3:n) uv i ni uvi
     where n3 = M.Vector3 x y z
-updateObjData (ObjParser.TexCoord x y) (ObjData v n uv i ni uvi) = ObjData v n (uv2:uv) i ni uvi
+updateObjData (Wavefront.ObjParser.TexCoord x y) (ObjData v n uv i ni uvi) = ObjData v n (uv2:uv) i ni uvi
     where uv2 = M.Vector2 x y
-updateObjData (ObjParser.FaceDef a1 a2 a3) (ObjData v n uv i ni uvi) = ObjData v n uv (idx:i) maybeNidx maybeUVidx
+updateObjData (Wavefront.ObjParser.FaceDef a1 a2 a3) (ObjData v n uv i ni uvi) = ObjData v n uv (idx:i) maybeNidx maybeUVidx
     where idx = TriangleIndex (vIdx a1 - 1) (vIdx a2 - 1) (vIdx a3 - 1)
           nIdx = toIdx $ fmap (\val -> val - 1) $ catMaybes [normIdx a1, normIdx a2, normIdx a3]
           uvIdx = toIdx $ fmap (\val -> val - 1) $ catMaybes [texIdx a1, texIdx a2, texIdx a3]

@@ -23,7 +23,7 @@ import qualified Data.Text as T
 import Scene
 import BufferedObject
 import Shader
-import ObjFile
+import Wavefront.ObjFile
 import SceneObject
 import Config
 import Camera

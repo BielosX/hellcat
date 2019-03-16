@@ -1,5 +1,5 @@
 {
-module ObjLexer where
+module Wavefront.ObjLexer where
 
 import Data.List
 }
