@@ -68,6 +68,7 @@ loadModel (Model v n i uv) = do
     uvVbo <- newArrayBuffer UVCoord $ fmap convV2 uv
     assignArrayBufferToVAO vertexCoordIdx vbo vao
     assignArrayBufferToVAO normalsIdx nVbo vao
+    assignArrayBufferToVAO uvIdx uvVbo vao
     if length i > 0 then do
         idxbuff <- newIndexBuffer $ fmap convIdx i
         return $ BufferedObject vao vbo (Just idxbuff)

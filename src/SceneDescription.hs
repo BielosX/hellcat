@@ -24,13 +24,17 @@ import Scene
 import BufferedObject
 import Shader
 import Wavefront.ObjFile
+import Wavefront.MtlFile
+import Material
 import SceneObject
 import Config
 import Camera
 import Light
+import Texture
 
 data ModelFile = WaveFront {
-    file :: String
+    file :: String,
+    mtlFile :: String
 } deriving (Generic, Show, Eq, Ord)
 
 instance Aeson.FromJSON ModelFile where
@@ -122,6 +126,7 @@ yamlError e = show e
 type BoMap = Map.Map ModelFile BufferedObject
 type ShaderMap = Map.Map String Shader
 type ProgramMap = Map.Map (Set.Set String) Program
+type TextureMap = Map.Map ModelFile BufferedTexture
 
 getBufferedObject :: ModelFile -> BoMap -> IO (BoMap, BufferedObject)
 getBufferedObject mf bm = case Map.lookup mf bm of
@@ -131,6 +136,15 @@ getBufferedObject mf bm = case Map.lookup mf bm of
         bo <- loadModel model
         return (Map.insert mf bo bm, bo)
     (Just bo) -> return (bm, bo)
+
+getBufferedTexture :: ModelFile -> TextureMap -> ExceptT String IO (TextureMap, BufferedTexture)
+getBufferedTexture mf tm = case Map.lookup mf tm of
+    Nothing -> do
+        let path = mtlFile mf
+        materialInfo <- liftIO $ readMtlFile path
+        texture <- loadTexture $ Material.diffuseTexturePath materialInfo
+        return (Map.insert mf texture tm, texture)
+    (Just bt) -> return (tm, bt)
 
 getType :: String -> ShaderType
 getType s = case takeExtension s of
@@ -154,19 +168,20 @@ getProgram shaders sm pm = case Map.lookup (Set.fromList shaders) pm of
         let shadersSet = Set.fromList shaders
         return (newSM, Map.insert shadersSet program pm, program)
 
-loadSceneObjects d = _loadSceneObjects d Map.empty Map.empty Map.empty
+loadSceneObjects d = _loadSceneObjects d Map.empty Map.empty Map.empty Map.empty
 
-_loadSceneObjects :: [SceneObjectDescription] -> BoMap -> ShaderMap -> ProgramMap -> ExceptT String IO [SceneObject]
-_loadSceneObjects [] _ _ _ = return []
-_loadSceneObjects (x:xs) bm sm pm = do
+_loadSceneObjects :: [SceneObjectDescription] -> BoMap -> ShaderMap -> ProgramMap -> TextureMap -> ExceptT String IO [SceneObject]
+_loadSceneObjects [] _ _ _ _ = return []
+_loadSceneObjects (x:xs) bm sm pm tm = do
     let s = shaders x
     (newSM, newPM, program) <- getProgram s sm pm
     (newBM, bo) <- lift $ getBufferedObject (modelFile x) bm
+    (newTM, texture) <- getBufferedTexture (modelFile x) tm
     let pos = toVector $ SceneDescription.position x
     let rot = toQuaternion $ rotation x
     let transMat = mkTransformation rot pos
-    let sceneObject = SceneObject (objId x) bo identity program Nothing
-    fmap (sceneObject:) (_loadSceneObjects xs newBM newSM newPM)
+    let sceneObject = SceneObject (objId x) bo transMat program (Just texture)
+    fmap (sceneObject:) (_loadSceneObjects xs newBM newSM newPM newTM)
 
 toLight :: LightDescription -> Light
 toLight (PointLightDescription i p) = PointLight i (toVector4 p)

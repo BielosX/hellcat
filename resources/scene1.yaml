@@ -19,6 +19,7 @@ objects:
         zr: 0
       modelFile:
         file: "monkey.obj"
+        mtlFile: "monkey.mtl"
       shaders:
           - "shader.vert"
           - "shader.frag"
