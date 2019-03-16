@@ -1,4 +1,4 @@
-module Wavefront.ObjFile where
+module Wavefront.ObjFile(readObjFile) where
 
 import Wavefront.ObjLexer
 import Wavefront.ObjParser
