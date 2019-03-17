@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module Scene (
     scene,
     Scene,
@@ -9,8 +10,10 @@ module Scene (
     ) where
 
 import Graphics.GL.Types
+import Graphics.GL.Functions
 import Data.List
 import Linear.Matrix
+import Linear.V3
 import Data.Maybe
 
 import Camera
@@ -73,17 +76,31 @@ bindTexture :: Maybe BufferedTexture -> IO ()
 bindTexture (Just t) = useTexture t
 bindTexture Nothing = return ()
 
+uniformVector3f :: V3 Float -> GLint -> IO ()
+uniformVector3f (V3 x y z) id = glUniform3f id (f x) (f y) (f z)
+    where f = (realToFrac :: Float -> GLfloat)
+
+positionNotDefined = "WARNING: uniform position not defined"
+
 drawSceneObject :: SceneObject -> Camera -> IO ()
-drawSceneObject obj activeCamera = do
-    useProgram $ program obj
-    projLoc <- getUniformLocation (program obj) "projection"
-    viewLoc <- getUniformLocation (program obj) "view"
-    modelLoc <- getUniformLocation (program obj) "model"
+drawSceneObject SceneObject{program, object, texture, modelMatrix} activeCamera = do
+    useProgram program
+    projLoc <- getUniformLocation program "projection"
+    viewLoc <- getUniformLocation program "view"
+    modelLoc <- getUniformLocation program "model"
     loadMatrix projLoc (projection activeCamera)
     loadMatrix viewLoc (view activeCamera)
-    loadMatrix modelLoc (modelMatrix obj)
-    bindTexture (texture obj)
-    drawObject $ object obj
+    loadMatrix modelLoc modelMatrix
+    bindTexture texture
+    drawObject object
+drawSceneObject Sprite{spriteObject, spritePosition, spriteProgram, spriteTexture} activeCamera = do
+    useProgram spriteProgram
+    viewLoc <- getUniformLocation spriteProgram "view"
+    posLoc <- getUniformLocation spriteProgram "position"
+    loadMatrix viewLoc (view activeCamera)
+    maybe (putStrLn positionNotDefined) (uniformVector3f spritePosition) posLoc
+    useTexture spriteTexture
+    drawObject spriteObject
 
 drawScene :: Scene -> IO ()
 drawScene s = do
