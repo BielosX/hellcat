@@ -36,6 +36,7 @@ dependencies:
 - filepath
 - vector
 - JuicyPixels
+- JuicyPixels-extra
 
 library:
   source-dirs: src

@@ -18,6 +18,7 @@ import Foreign.Marshal.Array
 import Foreign.Storable
 import Codec.Picture.Types
 import Codec.Picture.Png
+import Codec.Picture.Extra
 
 data BufferedTexture = BufferedTexture GLuint deriving (Eq, Show)
 
@@ -39,15 +40,16 @@ storeTexture :: (Pixel a, Storable b) =>
     IO BufferedTexture
 storeTexture image elemSize toStorable intFormat format dataType = do
     id <- genTexture
-    let width = (imageWidth image)
-    let height = (imageHeight image)
+    let flipImg = flipVertically image
+    let width = (imageWidth flipImg)
+    let height = (imageHeight flipImg)
     let glW = fromIntegral width :: GLsizei
     let glH = fromIntegral height :: GLsizei
     let bytes = width * height * elemSize
     let iFormat = fromIntegral intFormat :: GLint
     glBindTexture GL_TEXTURE_2D id
     allocaBytes bytes $ \ptr -> do
-        pixelFoldM (\acc w h pixel -> storeAt acc $ toStorable pixel) ptr image
+        pixelFoldM (\acc w h pixel -> storeAt acc $ toStorable pixel) ptr flipImg
         glTexImage2D GL_TEXTURE_2D 0 iFormat glW glH 0 format dataType ptr
     let nearest = fromIntegral GL_NEAREST :: GLint
     glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER nearest
