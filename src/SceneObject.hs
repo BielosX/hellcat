@@ -33,10 +33,13 @@ data SceneObject = SceneObject {
 newSceneObject id o p = SceneObject id o identity p Nothing
 
 spriteFromImage :: DynamicImage -> Program -> V3 Float -> Int -> ExceptT String IO SceneObject
-spriteFromImage (ImageRGBA8 i) prog pos id = do
+spriteFromImage di@(ImageRGBA8 i) prog pos id = do
     let width = imageWidth i
-    let height = imageHeight
-    throwError "Not implemented yet"
+    let height = imageHeight i
+    let model = Model (spriteVertices width height) spriteNormals [] spriteUVs
+    vao <- liftIO $ loadModel model
+    texture <- loadImage di
+    return $ Sprite id vao pos prog texture
 spriteFromImage _ _ _ _ = throwError "texture should contain alpha channel"
 
 

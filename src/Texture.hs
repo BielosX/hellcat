@@ -1,7 +1,8 @@
 module Texture(
                 loadTexture,
                 BufferedTexture(..),
-                useTexture
+                useTexture,
+                loadImage
                 ) where
 
 import qualified Data.ByteString as B
@@ -62,11 +63,8 @@ genTexture = alloca $ \ptr -> do
     value <- peek ptr
     return value
 
-loadPng :: FilePath -> ExceptT String IO BufferedTexture
-loadPng path = do
-    content <- liftIO $ B.readFile path
-    dynamicImage <- liftEither $ decodePng content
-    case dynamicImage of
+loadImage :: DynamicImage -> ExceptT String IO BufferedTexture
+loadImage dynamicImage = case dynamicImage of
         (ImageRGBA8 i) -> do
             let pixel = 0 :: Pixel8
             let size = (4*) $ sizeOf pixel
@@ -76,6 +74,12 @@ loadPng path = do
             let size = (3*) $ sizeOf pixel
             liftIO $ storeTexture i size (\(PixelRGB8 r g b) -> [r,g,b]) GL_RGB8 GL_RGB GL_UNSIGNED_BYTE
         _ -> throwError "format not supported"
+
+loadPng :: FilePath -> ExceptT String IO BufferedTexture
+loadPng path = do
+    content <- liftIO $ B.readFile path
+    dynamicImage <- liftEither $ decodePng content
+    loadImage dynamicImage
 
 loadTexture :: FilePath -> ExceptT String IO BufferedTexture
 loadTexture path = case takeExtension path of

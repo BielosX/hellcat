@@ -96,6 +96,15 @@ data SceneObjectDescription = SceneObjectDescription {
 
 instance Aeson.FromJSON SceneObjectDescription where
 
+data SpriteDescription = SpriteDescription {
+    spriteId :: Int,
+    spritePos :: Position,
+    spriteTexture :: String,
+    spriteShaders :: [String]
+} deriving (Generic, Show)
+
+instance Aeson.FromJSON SpriteDescription where
+
 data LightDescription = PointLightDescription {
     intensity :: Float,
     lightPosition :: Position
