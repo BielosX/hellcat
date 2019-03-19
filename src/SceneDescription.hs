@@ -123,7 +123,8 @@ instance Aeson.FromJSON LightDescription where
 data SceneDescription = SceneDescription {
     cameras :: [CameraDescription],
     objects :: [SceneObjectDescription],
-    lights :: [LightDescription]
+    lights :: [LightDescription],
+    sprites :: [SpriteDescription]
 } deriving (Generic, Show)
 
 instance Aeson.FromJSON SceneDescription where
@@ -205,6 +206,27 @@ loadSceneLights a = do
     intenSSB <- liftIO $ loadShaderStorageBuffer inten (\i -> [i])
     return $ Lights l posSSB intenSSB
 
+type SpriteMap = Map.Map String (BufferedObject, BufferedTexture)
+
+_loadSprites :: [SpriteDescription] -> ShaderMap -> ProgramMap -> SpriteMap -> ExceptT String IO [SceneObject]
+_loadSprites [] _ _ _ = return []
+_loadSprites (x:xs) shm pm sprm = case Map.lookup (SceneDescription.spriteTexture x) sprm of
+    (Just (bo, bt)) -> do
+        (newSM, newPM, program) <- getProgram (spriteShaders x) shm pm
+        let newSprite = Sprite (spriteId x) bo (toVector $ spritePos x) program bt
+        fmap (newSprite:) (_loadSprites xs newSM newPM sprm)
+    Nothing -> do
+        (newSM, newPM, program) <- getProgram (spriteShaders x) shm pm
+        let t = SceneDescription.spriteTexture x
+        sprite <- spriteFromFile t program (toVector $ spritePos x) (spriteId x)
+        let sbo = spriteObject sprite
+        let sbt = SceneObject.spriteTexture sprite
+        let newSpriteMap = Map.insert t (sbo, sbt) sprm
+        fmap (sprite:) (_loadSprites xs newSM newPM newSpriteMap)
+
+loadSprites :: [SpriteDescription] -> ExceptT String IO [SceneObject]
+loadSprites s = _loadSprites s Map.empty Map.empty Map.empty
+
 getSceneDescription :: FilePath -> ExceptT String IO SceneDescription
 getSceneDescription path = do
     let ext = takeExtension path
@@ -223,7 +245,8 @@ loadScene path f= do
     description <- getSceneDescription path
     sceneObjects <- loadSceneObjects (objects description)
     l <- loadSceneLights (SceneDescription.lights description)
+    s <- loadSprites (sprites description)
     let cam = fmap f (cameras description)
-    result <- liftEither $ scene sceneObjects cam l
+    result <- liftEither $ scene (sceneObjects ++ s) cam l
     return result
 

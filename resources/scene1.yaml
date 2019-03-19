@@ -10,7 +10,7 @@ cameras:
       camId: 1
 objects:
     - position:
-        xp: 0
+        xp: 10
         yp: 0
         zp: 0
       rotation:
@@ -31,3 +31,14 @@ lights:
         zp: 15
       intensity: 100
       type: PointLight
+sprites:
+    - spriteId: 1
+      spritePos:
+          xp: 0
+          yp: 0
+          zp: 0
+      spriteTexture: "sprite.png"
+      spriteShaders:
+          - "sprite.frag"
+          - "sprite.vert"
+

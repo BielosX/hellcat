@@ -97,6 +97,8 @@ drawSceneObject Sprite{spriteObject, spritePosition, spriteProgram, spriteTextur
     useProgram spriteProgram
     viewLoc <- getUniformLocation spriteProgram "view"
     posLoc <- getUniformLocation spriteProgram "position"
+    projLoc <- getUniformLocation spriteProgram "projection"
+    loadMatrix projLoc (projection activeCamera)
     loadMatrix viewLoc (view activeCamera)
     maybe (putStrLn positionNotDefined) (uniformVector3f spritePosition) posLoc
     useTexture spriteTexture

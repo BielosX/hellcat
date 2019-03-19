@@ -5,6 +5,7 @@ layout(location = 1) in vec3 normalPosition;
 layout(location = 2) in vec2 vertexUV;
 
 uniform mat4 view;
+uniform mat4 projection;
 uniform vec3 position;
 
 out vec2 UV;
@@ -22,15 +23,16 @@ float calcAngle(vec3 v1, vec3 v2) {
 }
 
 void main() {
-    vec3 toCamera = vec3(0,0,0) - vertexPosition;
-    vec4 norm = view * vec4(normalPosition, 1);
-    float angle = calcAngle(norm.xyz, toCamera);
+    vec4 vertInCam = view * vec4(vertexPosition, 1);
+    vec3 toCamera = vec3(0,0,0) - vertInCam.xyz;
+    vec3 norm = mat3(view) * normalPosition;
+    float angle = calcAngle(norm, toCamera);
     mat3 rotMat = rotateY(angle);
-    vec3 newNorm = rotMat * norm.xyz;
-    float newAngle = calcAngle(newNorm.xyz, toCamera);
+    vec3 newNorm = rotMat * norm;
+    float newAngle = calcAngle(newNorm, toCamera);
     if (newAngle > angle) {
         rotMat = rotateY(-angle);
     }
-    gl_Position = view * vec4((rotMat * vertexPosition) + position, 1);
+    gl_Position = projection * view * vec4((rotMat * vertexPosition) + position, 1);
     UV = vertexUV;
 }

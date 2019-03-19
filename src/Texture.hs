@@ -2,7 +2,8 @@ module Texture(
                 loadTexture,
                 BufferedTexture(..),
                 useTexture,
-                loadImage
+                loadImage,
+                loadDynamicImage
                 ) where
 
 import qualified Data.ByteString as B
@@ -75,13 +76,17 @@ loadImage dynamicImage = case dynamicImage of
             liftIO $ storeTexture i size (\(PixelRGB8 r g b) -> [r,g,b]) GL_RGB8 GL_RGB GL_UNSIGNED_BYTE
         _ -> throwError "format not supported"
 
-loadPng :: FilePath -> ExceptT String IO BufferedTexture
+loadPng :: FilePath -> ExceptT String IO DynamicImage
 loadPng path = do
     content <- liftIO $ B.readFile path
-    dynamicImage <- liftEither $ decodePng content
-    loadImage dynamicImage
+    liftEither $ decodePng content
 
-loadTexture :: FilePath -> ExceptT String IO BufferedTexture
-loadTexture path = case takeExtension path of
+loadDynamicImage :: FilePath -> ExceptT String IO DynamicImage
+loadDynamicImage path = case takeExtension path of
     ".png" -> loadPng path
     _ -> throwError "file format not supported"
+
+loadTexture :: FilePath -> ExceptT String IO BufferedTexture
+loadTexture path = do
+    image <- loadDynamicImage path
+    loadImage image

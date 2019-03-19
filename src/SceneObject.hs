@@ -42,15 +42,19 @@ spriteFromImage di@(ImageRGBA8 i) prog pos id = do
     return $ Sprite id vao pos prog texture
 spriteFromImage _ _ _ _ = throwError "texture should contain alpha channel"
 
+spriteFromFile :: FilePath -> Program -> V3 Float -> Int -> ExceptT String IO SceneObject
+spriteFromFile path prog pos id = do
+    image <- loadDynamicImage path
+    spriteFromImage image prog pos id
 
 spriteVertices :: Int -> Int -> [Model.Vector3]
 spriteVertices width height = fmap f [
         Model.Vector3 (-0.5) (-0.5) 0,
-        Model.Vector3 (-0.5) 0.5 0,
-        Model.Vector3 0.5 (-0.5) 0,
         Model.Vector3 0.5 (-0.5) 0,
         Model.Vector3 (-0.5) 0.5 0,
-        Model.Vector3 0.5 0.5 0
+        Model.Vector3 0.5 (-0.5) 0,
+        Model.Vector3 0.5 0.5 0,
+        Model.Vector3 (-0.5) 0.5 0
     ]
     where maxLen = toFloat $ max width height
           normW = (toFloat width) / maxLen
@@ -59,14 +63,14 @@ spriteVertices width height = fmap f [
           f (Model.Vector3 x y z) = Model.Vector3 (x * normW) (y * normH) z
 
 spriteNormals :: [Model.Vector3]
-spriteNormals = take 6 $ repeat $ Model.Vector3 0 0 (-1)
+spriteNormals = take 6 $ repeat $ Model.Vector3 0 0 1
 
 spriteUVs :: [Model.Vector2]
 spriteUVs = [
         Model.Vector2 0.0 0.0,
-        Model.Vector2 0.0 1.0,
-        Model.Vector2 1.0 0.0,
         Model.Vector2 1.0 0.0,
         Model.Vector2 0.0 1.0,
-        Model.Vector2 1.0 1.0
+        Model.Vector2 1.0 0.0,
+        Model.Vector2 1.0 1.0,
+        Model.Vector2 0.0 1.0
     ]
