@@ -43,10 +43,12 @@ getFirstPressed a = _getFirstPressed (length a - 1) a
 
 sceneMappers :: Map.Map Int (Scene -> Scene)
 sceneMappers = Map.fromList [
-        (3, \s -> transformCurrentCam s (moveMat $ V3 0 0 0.1)),
-        (2, \s -> transformCurrentCam s (moveMat $ V3 0 0 (-0.1))),
-        (1, \s -> transformCurrentCam s (rotateY $ (-(pi / 180)))),
-        (0, \s -> transformCurrentCam s (rotateY $ (pi / 180)))
+        (5, \s -> transformCurrentCam s (moveMat $ V3 0 0 0.1)),
+        (4, \s -> transformCurrentCam s (moveMat $ V3 0 0 (-0.1))),
+        (3, \s -> transformCurrentCam s (rotateY $ (-(pi / 180)))),
+        (2, \s -> transformCurrentCam s (rotateY $ (pi / 180))),
+        (1, \s -> transformCurrentCam s (moveMat $ V3 0 0.1 0)),
+        (0, \s -> transformCurrentCam s (moveMat $ V3 0 (-0.1) 0))
     ]
 
 transformScene :: Maybe Int -> Scene -> Scene
@@ -68,7 +70,9 @@ render window s = do
         k1 <- GLFW.getKey window GLFW.Key'S
         k2 <- GLFW.getKey window GLFW.Key'A
         k3 <- GLFW.getKey window GLFW.Key'D
-        let pressed = getFirstPressed [k0, k1, k2, k3]
+        k4 <- GLFW.getKey window GLFW.Key'F
+        k5 <- GLFW.getKey window GLFW.Key'R
+        let pressed = getFirstPressed [k0, k1, k2, k3, k4, k5]
         let newS = transformScene pressed s
         drawScene newS
         GLFW.swapBuffers window
